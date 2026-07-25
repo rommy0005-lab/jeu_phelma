@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Jeu de Cartes en Ligne - P2P</title>
-    <!-- Inclusion de PeerJS pour la connexion en ligne -->
+    <title>Duel de Cartes - Attaque unique par carte</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body {
@@ -16,44 +15,86 @@
             flex-direction: column;
             align-items: center;
         }
-        h1 { margin-bottom: 5px; color: #d4af37; font-size: 1.6em; text-shadow: 0 0 10px rgba(212,175,55,0.4); }
-        .net-menu {
-            background: #15151c;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid #d4af37;
-            margin-bottom: 15px;
+        h1, h2 { color: #d4af37; text-shadow: 0 0 10px rgba(212,175,55,0.4); text-align: center; }
+
+        .screen {
             display: flex;
-            gap: 15px;
+            flex-direction: column;
             align-items: center;
-            font-size: 0.9em;
+            width: 100%;
+            max-width: 950px;
         }
+        .hidden { display: none !important; }
+
+        #home-screen {
+            background: #15151c;
+            border: 2px solid #d4af37;
+            padding: 40px;
+            border-radius: 15px;
+            margin-top: 50px;
+            box-shadow: 0 0 30px rgba(212,175,55,0.2);
+            text-align: center;
+        }
+        .menu-btn {
+            background: linear-gradient(135deg, #d4af37, #aa820a);
+            color: #0b0b0f;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+        .menu-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(212,175,55,0.6);
+        }
+
+        .net-box {
+            background: #121218;
+            border: 1px solid #444;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
         .game-info {
             background: #15151c;
-            padding: 8px 20px;
+            padding: 10px 20px;
             border-radius: 8px;
             border: 1px solid #333;
             margin-bottom: 15px;
             display: flex;
-            gap: 25px;
-            font-size: 0.9em;
+            gap: 20px;
+            font-size: 0.85em;
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         .board {
             display: flex;
             flex-direction: column;
             gap: 15px;
             width: 100%;
-            max-width: 950px;
         }
         .player-zone {
             background: #121218;
             border: 2px dashed #333;
-            padding: 12px;
+            padding: 15px;
             border-radius: 10px;
             min-height: 200px;
             position: relative;
         }
-        .player-zone h3 { margin: 0 0 8px 0; color: #888; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px;}
+        .player-zone h3 { margin: 0 0 8px 0; color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
         .hand {
             display: flex;
             gap: 12px;
@@ -65,7 +106,7 @@
             background: linear-gradient(135deg, #23232e 0%, #0e0e13 100%);
             border: 2px solid #d4af37;
             border-radius: 10px;
-            width: 140px;
+            width: 130px;
             padding: 6px;
             display: flex;
             flex-direction: column;
@@ -75,24 +116,40 @@
             transition: all 0.3s;
             flex-shrink: 0;
             position: relative;
-            overflow: hidden;
         }
         .card:hover {
             transform: translateY(-8px) scale(1.03);
             border-color: #ffe875;
         }
+        .card.selected {
+            border-color: #76ff03;
+            box-shadow: 0 0 15px rgba(118,255,3, 0.8);
+        }
+        .card.attacker-selected {
+            border-color: #ff3d00;
+            box-shadow: 0 0 15px rgba(255,61,0, 0.9);
+            transform: translateY(-5px);
+        }
+        .card.has-attacked {
+            opacity: 0.5;
+            filter: grayscale(60%);
+            cursor: not-allowed;
+        }
         .card-img-container {
             width: 100%;
-            height: 110px;
+            height: 130px;
             border-radius: 6px;
             overflow: hidden;
             border: 1px solid #444;
             background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .card-img-container img { width: 100%; height: 100%; object-fit: contain; }
         .card-title {
             font-weight: bold;
-            font-size: 0.75em;
+            font-size: 0.7em;
             color: #d4af37;
             text-align: center;
             white-space: nowrap;
@@ -101,8 +158,8 @@
             margin-top: 4px;
         }
         .card-stats {
-            font-size: 0.7em;
-            margin: 3px 0;
+            font-size: 0.65em;
+            margin: 2px 0;
             background: rgba(0,0,0,0.5);
             padding: 2px;
             border-radius: 4px;
@@ -110,17 +167,13 @@
             color: #76ff03;
             font-family: monospace;
         }
-        .controls { margin-top: 15px; display: flex; gap: 10px; }
-        button, input {
-            background: linear-gradient(135deg, #d4af37, #aa820a);
-            color: #0b0b0f;
-            border: none;
-            padding: 8px 15px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
+        .deck-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 15px 0;
         }
-        input { background: #222; color: #fff; border: 1px solid #444; }
         .log {
             margin-top: 15px;
             background: #111116;
@@ -134,106 +187,258 @@
             overflow-y: auto;
             color: #aaa;
             font-family: monospace;
+            box-sizing: border-box;
+        }
+        button, input {
+            background: linear-gradient(135deg, #d4af37, #aa820a);
+            color: #0b0b0f;
+            border: none;
+            padding: 8px 15px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input { background: #222; color: #fff; border: 1px solid #444; }
+
+        #game-over-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <h1>DUEL DE CARTES — EN LIGNE</h1>
-
-    <div class="net-menu">
-        <div>Mon ID : <span id="my-id" style="color: #76ff03; font-weight: bold;">Génération...</span></div>
-        <div>
-            <input type="text" id="peer-id-input" placeholder="ID de l'adversaire">
-            <button onclick="connectToPeer()">Rejoindre</button>
+    <div id="home-screen" class="screen">
+        <h1>DUEL DE CARTES</h1>
+        <p style="color: #aaa;">Choisis ton mode de jeu pour commencer.</p>
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
+            <button class="menu-btn" onclick="showMode('ai')">Mode Solo (vs IA)</button>
+            <button class="menu-btn" onclick="showMode('multi')">Mode Multijoueur</button>
         </div>
-        <div>Rôle : <span id="my-role" style="color: #d4af37; font-weight: bold;">En attente</span></div>
-    </div>
 
-    <div class="game-info">
-        <div>Tour de : <span id="current-player" style="color: #d4af37; font-weight: bold;">Joueur 1</span></div>
-        <div>Énergie J1 : <span id="energy-p1">3</span>/10</div>
-        <div>Énergie J2 : <span id="energy-p2">3</span>/10</div>
-    </div>
-
-    <div class="board">
-        <div class="player-zone">
-            <h3>Terrain - Joueur 2</h3>
-            <div id="field-p2" class="hand"></div>
-            <h3>Main - Joueur 2 <span id="count-p2" style="font-size: 0.8em; color: #555;"></span></h3>
-            <div id="hand-p2" class="hand"></div>
-        </div>
-        <div class="player-zone">
-            <h3>Terrain - Joueur 1</h3>
-            <div id="field-p1" class="hand"></div>
-            <h3>Main - Joueur 1</h3>
-            <div id="hand-p1" class="hand"></div>
+        <div id="multi-panel" class="net-box hidden">
+            <h3>Configuration En Ligne</h3>
+            <div>Mon ID : <span id="my-id" style="color: #76ff03; font-weight: bold;">Génération...</span></div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="peer-id-input" placeholder="ID de l'adversaire">
+                <button onclick="connectToPeer()">Rejoindre</button>
+            </div>
+            <div>Rôle : <span id="my-role" style="color: #d4af37;">En attente</span></div>
         </div>
     </div>
 
-    <div class="controls">
-        <button onclick="endTurn()">Fin du Tour</button>
+    <div id="deck-builder" class="screen hidden">
+        <h2>Création de ton Deck</h2>
+        <p>Sélectionne tes cartes (<span id="selected-count">0</span> / 6)</p>
+        <div class="deck-grid" id="builder-grid"></div>
+        <button onclick="validateDeck()" id="validate-deck-btn" disabled style="opacity: 0.5; margin-top: 15px;">Valider le Deck</button>
     </div>
 
-    <div id="log" class="log">> En attente de connexion réseau...</div>
+    <div id="game-container" class="screen hidden">
+        <div class="game-info">
+            <div>Tour de : <span id="current-player" style="color: #d4af37; font-weight: bold;">Joueur 1</span></div>
+            <div>PV J1 : <span id="hp-p1" style="color: #ff3d00; font-weight: bold;">10000</span></div>
+            <div>Énergie J1 : <span id="energy-p1">3</span>/10</div>
+            <div>PV J2 : <span id="hp-p2" style="color: #ff3d00; font-weight: bold;">10000</span></div>
+            <div>Énergie J2 : <span id="energy-p2">3</span>/10</div>
+        </div>
+
+        <div class="board">
+            <div class="player-zone">
+                <h3 id="label-p2">Terrain - Adversaire</h3>
+                <div id="field-p2" class="hand"></div>
+                <h3 id="label-hand-p2">Main - Adversaire <span id="count-p2" style="font-size: 0.8em; color: #555;"></span></h3>
+                <div id="hand-p2" class="hand"></div>
+            </div>
+            <div class="player-zone">
+                <h3>Terrain - Joueur 1</h3>
+                <div id="field-p1" class="hand"></div>
+                <h3>Main - Joueur 1</h3>
+                <div id="hand-p1" class="hand"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+            <button onclick="endTurn()">Fin du Tour</button>
+            <span id="battle-status" style="font-size: 0.85em; color: #ffe875;"></span>
+        </div>
+    </div>
+
+    <div id="game-over-overlay" class="hidden">
+        <h1 id="game-over-title" style="color: #ff3d00; font-size: 2.5em;">FIN DE PARTIE</h1>
+        <p id="game-over-text" style="font-size: 1.2em; margin-bottom: 20px;"></p>
+        <button class="menu-btn" onclick="location.reload()">Rejouer</button>
+    </div>
+
+    <div id="log" class="log">> Bienvenue dans Duel de Cartes. Chaque carte peut attaquer une fois par tour.</div>
 
     <script>
-        const baseCards = [
+        const allCards = [
             { name: "Romolo", atk: 800, def: 1000, cost: 2, image: "cartes/33590.png" },
             { name: "Balayeur de Femmes", atk: 2000, def: 2000, cost: 4, image: "cartes/33592.png" },
             { name: "Balayeur Ultime", atk: 4000, def: 3000, cost: 6, image: "cartes/33597.png" },
             { name: "Pablo Rubiolo", atk: 5000, def: 5000, cost: 7, image: "cartes/33588.png" },
             { name: "Aura Pablet", atk: 3500, def: 9999, cost: 8, image: "cartes/33589.png" },
-            { name: "Homme Castagnet", atk: 2000, def: 500, cost: 3, image: "cartes/33586.png" }
+            { name: "Homme Castagnet", atk: 2000, def: 500, cost: 3, image: "cartes/33586.png" },
+            { name: "Hom Hugo", atk: 1500, def: 1800, cost: 2, image: "cartes/33631.png" },
+            { name: "Hom Chasseur de Nain", atk: 2300, def: 2000, cost: 2, image: "cartes/33634.png" },
+            { name: "Homme Bus Île de France", atk: 0, def: 0, cost: 1, image: "cartes/33636.png" },
+            { name: "Hom Moustache Commune Îles de France", atk: 100, def: 2400, cost: 2, image: "cartes/33637.png" }
         ];
 
+        let isAI = false;
+        let selectedDeckIndices = [];
+        let playerDecks = { 1: [], 2: [] };
         let state = {
             turn: 1,
+            hp: { 1: 10000, 2: 10000 },
             energy: { 1: 3, 2: 3 },
             maxEnergy: { 1: 3, 2: 3 },
-            hand: { 1: JSON.parse(JSON.stringify(baseCards)), 2: JSON.parse(JSON.stringify(baseCards)) },
+            hand: { 1: [], 2: [] },
             field: { 1: [], 2: [] }
         };
+        let peer = null, conn = null, myPlayerNum = null;
+        let selectedAttackerIndex = null;
 
-        let peer = null;
-        let conn = null;
-        let myPlayerNum = null;
+        function showMode(mode) {
+            if (mode === 'ai') {
+                isAI = true;
+                document.getElementById('home-screen').classList.add('hidden');
+                document.getElementById('deck-builder').classList.remove('hidden');
+                myPlayerNum = 1;
+                document.getElementById('label-p2').innerText = "Terrain - IA";
+                document.getElementById('label-hand-p2').innerText = "Main - IA";
+                initDeckBuilder();
+                logMessage("Mode Solo IA activé.");
+            } else {
+                document.getElementById('multi-panel').classList.remove('hidden');
+                initPeer();
+            }
+        }
 
-        // Initialisation PeerJS
-        peer = new Peer();
-        peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
-        });
-
-        peer.on('connection', (connection) => {
-            conn = connection;
-            myPlayerNum = 1; // Celui qui héberge est le Joueur 1
-            document.getElementById('my-role').innerText = "Joueur 1 (Hôte)";
-            logMessage("Adversaire connecté ! Tu es le Joueur 1.");
-            setupConnection();
-        });
+        function initPeer() {
+            if (!peer) {
+                peer = new Peer();
+                peer.on('open', (id) => { document.getElementById('my-id').innerText = id; });
+                peer.on('connection', (connection) => {
+                    conn = connection;
+                    myPlayerNum = 1;
+                    document.getElementById('my-role').innerText = "Joueur 1 (Hôte)";
+                    setupConnection();
+                    document.getElementById('home-screen').classList.add('hidden');
+                    document.getElementById('deck-builder').classList.remove('hidden');
+                    initDeckBuilder();
+                });
+            }
+        }
 
         function connectToPeer() {
             const destId = document.getElementById('peer-id-input').value;
             conn = peer.connect(destId);
-            myPlayerNum = 2; // Celui qui rejoint est le Joueur 2
+            myPlayerNum = 2;
             document.getElementById('my-role').innerText = "Joueur 2 (Invité)";
-            logMessage("Connexion à l'hôte établie ! Tu es le Joueur 2.");
             setupConnection();
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('deck-builder').classList.remove('hidden');
+            initDeckBuilder();
         }
 
         function setupConnection() {
-            conn.on('data', (incomingState) => {
-                state = incomingState;
-                render();
-                logMessage("Action reçue de l'adversaire.");
+            conn.on('data', (data) => {
+                if (data.type === 'DECK_SELECTION') {
+                    playerDecks[data.player] = data.deck;
+                    checkGameStart();
+                } else {
+                    state = data;
+                    selectedAttackerIndex = null;
+                    render();
+                    checkGameOver();
+                }
             });
         }
 
-        function sendState() {
-            if (conn && conn.open) {
-                conn.send(state);
+        function initDeckBuilder() {
+            const grid = document.getElementById('builder-grid');
+            grid.innerHTML = '';
+            allCards.forEach((card, index) => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
+                    <div class="card-title">${card.name}</div>
+                    <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
+                `;
+                div.onclick = () => toggleSelectCard(index, div);
+                grid.appendChild(div);
+            });
+        }
+
+        function toggleSelectCard(index, element) {
+            const pos = selectedDeckIndices.indexOf(index);
+            if (pos > -1) {
+                selectedDeckIndices.splice(pos, 1);
+                element.classList.remove('selected');
+            } else {
+                if (selectedDeckIndices.length >= 6) return logMessage("Maximum 6 cartes !");
+                selectedDeckIndices.push(index);
+                element.classList.add('selected');
             }
+            document.getElementById('selected-count').innerText = selectedDeckIndices.length;
+            const btn = document.getElementById('validate-deck-btn');
+            if (selectedDeckIndices.length === 6) { btn.disabled = false; btn.style.opacity = '1'; }
+            else { btn.disabled = true; btn.style.opacity = '0.5'; }
+        }
+
+        function validateDeck() {
+            const myDeck = selectedDeckIndices.map(i => {
+                let c = JSON.parse(JSON.stringify(allCards[i]));
+                c.hasAttacked = false;
+                return c;
+            });
+            playerDecks[myPlayerNum] = myDeck;
+
+            if (isAI) {
+                let aiDeck = [];
+                let shuffled = [...allCards].sort(() => 0.5 - Math.random());
+                for(let i=0; i<6; i++) {
+                    let c = JSON.parse(JSON.stringify(shuffled[i]));
+                    c.hasAttacked = false;
+                    aiDeck.push(c);
+                }
+                playerDecks[2] = aiDeck;
+
+                document.getElementById('deck-builder').classList.add('hidden');
+                document.getElementById('game-container').classList.remove('hidden');
+                state.hand[1] = playerDecks[1];
+                state.hand[2] = playerDecks[2];
+                logMessage("Le duel contre l'IA commence !");
+                render();
+            } else {
+                if (conn && conn.open) conn.send({ type: 'DECK_SELECTION', deck: myDeck, player: myPlayerNum });
+                document.getElementById('deck-builder').classList.add('hidden');
+                logMessage("En attente du deck de l'adversaire...");
+                checkGameStart();
+            }
+        }
+
+        function checkGameStart() {
+            if (playerDecks[1].length > 0 && playerDecks[2].length > 0) {
+                state.hand[1] = playerDecks[1];
+                state.hand[2] = playerDecks[2];
+                document.getElementById('game-container').classList.remove('hidden');
+                logMessage("Le duel commence !");
+                render();
+            }
+        }
+
+        function sendState() {
+            if (!isAI && conn && conn.open) conn.send(state);
         }
 
         function logMessage(msg) {
@@ -242,25 +447,62 @@
             logEl.scrollTop = logEl.scrollHeight;
         }
 
+        function checkGameOver() {
+            if (state.hp[1] <= 0) {
+                triggerGameOver(2);
+            } else if (state.hp[2] <= 0) {
+                triggerGameOver(1);
+            }
+        }
+
+        function triggerGameOver(winner) {
+            const overlay = document.getElementById('game-over-overlay');
+            const text = document.getElementById('game-over-text');
+            text.innerText = isAI ? (winner === 1 ? "Victoire ! Tu as vaincu l'IA." : "Défaite ! L'IA t'a vaincu.") : `Le Joueur ${winner} remporte la partie !`;
+            overlay.classList.remove('hidden');
+        }
+
         function render() {
             document.getElementById('current-player').innerText = `Joueur ${state.turn}`;
+            document.getElementById('hp-p1').innerText = state.hp[1];
+            document.getElementById('hp-p2').innerText = state.hp[2];
             document.getElementById('energy-p1').innerText = state.energy[1];
             document.getElementById('energy-p2').innerText = state.energy[2];
 
             renderHand(1);
             renderField(1);
-            renderHand(2, true);
+            renderHand(2, !isAI && myPlayerNum !== 2);
             renderField(2);
+            updateBattleText();
+            checkGameOver();
+        }
+
+        function updateBattleText() {
+            const statusEl = document.getElementById('battle-status');
+            const activePlayer = state.turn;
+            const canControl = isAI ? (activePlayer === 1) : (activePlayer === myPlayerNum);
+
+            if (canControl && selectedAttackerIndex !== null) {
+                const attackerName = state.field[activePlayer][selectedAttackerIndex]?.name || "";
+                statusEl.innerText = `Attaquant : [${attackerName}] — Clique sur une carte ennemie pour l'attaquer.`;
+            } else {
+                statusEl.innerText = "Sélectionne une de tes cartes non jouées pour attaquer.";
+            }
         }
 
         function renderHand(player, hidden = false) {
             const handEl = document.getElementById(`hand-p${player}`);
+            if (!handEl) return;
             handEl.innerHTML = '';
+            if (!state.hand[player]) state.hand[player] = [];
+
             state.hand[player].forEach((card, index) => {
                 const div = document.createElement('div');
                 div.className = 'card';
-                if (hidden && myPlayerNum !== player) {
-                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:70px; color:#555;">SECRET</div>`;
+                if (hidden && !isAI && myPlayerNum !== player) {
+                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#555;">SECRET</div>`;
+                } else if (isAI && player === 2) {
+                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#555;">IA</div>`;
                 } else {
                     div.innerHTML = `
                         <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
@@ -271,90 +513,179 @@
                 }
                 handEl.appendChild(div);
             });
-            if(hidden && myPlayerNum !== player) {
-                document.getElementById('count-p2').innerText = `(${state.hand[2].length} en main)`;
+            if (hidden || isAI) {
+                const countEl = document.getElementById('count-p2');
+                if (countEl) countEl.innerText = `(${state.hand[2].length} en main)`;
             }
         }
 
         function renderField(player) {
             const fieldEl = document.getElementById(`field-p${player}`);
+            if (!fieldEl) return;
             fieldEl.innerHTML = '';
+            if (!Array.isArray(state.field[player])) state.field[player] = [];
+
+            const activePlayer = state.turn;
+            const canControl = isAI ? (activePlayer === 1) : (activePlayer === myPlayerNum);
+
             state.field[player].forEach((card, index) => {
                 const div = document.createElement('div');
                 div.className = 'card';
-                div.style.borderColor = '#4a90e2';
+
+                if (card.hasAttacked) {
+                    div.classList.add('has-attacked');
+                } else if (player === activePlayer && canControl && selectedAttackerIndex === index) {
+                    div.classList.add('attacker-selected');
+                } else {
+                    div.style.borderColor = (player === 1) ? '#4a90e2' : '#d4af37';
+                }
+
                 div.innerHTML = `
                     <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                     <div class="card-title">${card.name}</div>
                     <div class="card-stats">⚔️ ${card.atk} | 🛡️ ${card.def}</div>
                 `;
-                if(player !== state.turn && state.field[state.turn].length > 0) {
-                    div.style.cursor = 'pointer';
-                    div.title = "Cliquer pour attaquer";
-                    div.onclick = () => resolveCombat(index);
-                }
+
+                div.onclick = () => {
+                    if (!canControl) return;
+
+                    if (player === activePlayer) {
+                        if (card.hasAttacked) {
+                            return logMessage(`${card.name} a déjà attaqué ce tour-ci !`);
+                        }
+                        selectedAttackerIndex = index;
+                        logMessage(`Carte ${card.name} prête à attaquer.`);
+                        render();
+                    } else {
+                        if (selectedAttackerIndex !== null) {
+                            resolveCombat(selectedAttackerIndex, index);
+                        } else {
+                            logMessage("Sélectionne d'abord une de tes cartes sur le terrain !");
+                        }
+                    }
+                };
+
                 fieldEl.appendChild(div);
             });
         }
 
         function playCard(player, index) {
-            if (myPlayerNum && player !== myPlayerNum) {
-                logMessage("Tu ne peux pas jouer les cartes de l'adversaire !");
-                return;
-            }
-            if (player !== state.turn) {
-                logMessage("Ce n'est pas ton tour !");
-                return;
-            }
+            if (!isAI && myPlayerNum && player !== myPlayerNum) return logMessage("Ce n'est pas ta main !");
+            if (player !== state.turn) return logMessage("Ce n'est pas ton tour !");
+
             const card = state.hand[player][index];
-            if (state.energy[player] < card.cost) {
-                logMessage(`Énergie insuffisante ! (Requis: ${card.cost})`);
-                return;
-            }
+            if (state.energy[player] < card.cost) return logMessage("Énergie insuffisante !");
 
             state.energy[player] -= card.cost;
             state.hand[player].splice(index, 1);
+            if (!Array.isArray(state.field[player])) state.field[player] = [];
+
+            card.hasAttacked = true; // Les cartes invoquées ne peuvent pas attaquer le tour où elles sont posées
             state.field[player].push(card);
-            logMessage(`Joueur ${player} déploie ${card.name} !`);
-            
+            logMessage(`Joueur ${player} déploie ${card.name} (épuisée ce tour).`);
+
             sendState();
             render();
         }
 
-        function resolveCombat(targetIndexP2) {
-            if (state.turn !== myPlayerNum) return;
+        function resolveCombat(attackerIdx, defenderIdx) {
             const activePlayer = state.turn;
             const defendingPlayer = activePlayer === 1 ? 2 : 1;
-            const attacker = state.field[activePlayer][0];
-            const defender = state.field[defendingPlayer][targetIndexP2];
 
-            logMessage(`Affrontement : ${attacker.name} attaque ${defender.name} !`);
+            const attacker = state.field[activePlayer][attackerIdx];
+            const defender = state.field[defendingPlayer][defenderIdx];
+
+            if (!attacker || !defender) return;
+            if (attacker.hasAttacked) return logMessage("Cette carte a déjà attaqué ce tour !");
+
+            logMessage(`${attacker.name} attaque ${defender.name} !`);
 
             if (attacker.atk >= defender.def) {
-                state.field[defendingPlayer].splice(targetIndexP2, 1);
-                logMessage(`Impact critique ! ${defender.name} est détruite.`);
+                state.field[defendingPlayer].splice(defenderIdx, 1);
+                let damage = attacker.atk;
+                state.hp[defendingPlayer] -= damage;
+                logMessage(`Impact critique ! ${defender.name} est détruite et le Joueur ${defendingPlayer} subit ${damage} dégâts !`);
             } else {
-                logMessage(`La défense de ${defender.name} encaisse le choc.`);
+                let minorDamage = Math.max(100, attacker.atk - defender.def);
+                state.hp[defendingPlayer] -= minorDamage;
+                logMessage(`${defender.name} encaisse, mais le Joueur ${defendingPlayer} perd ${minorDamage} PV.`);
             }
+
+            attacker.hasAttacked = true;
+            selectedAttackerIndex = null;
             sendState();
             render();
         }
 
         function endTurn() {
-            if (state.turn !== myPlayerNum) {
-                logMessage("Ce n'est pas à ton tour de finir le tour !");
-                return;
-            }
+            const activePlayer = state.turn;
+            const canControl = isAI ? (activePlayer === 1) : (activePlayer === myPlayerNum);
+            if (!canControl) return logMessage("Ce n'est pas ton tour !");
+
+            selectedAttackerIndex = null;
+            switchTurn();
+            if (isAI && state.turn === 2) setTimeout(aiTurn, 800);
+        }
+
+        function switchTurn() {
             state.turn = state.turn === 1 ? 2 : 1;
             state.maxEnergy[state.turn] = Math.min(state.maxEnergy[state.turn] + 1, 10);
             state.energy[state.turn] = state.maxEnergy[state.turn];
-            logMessage(`--- Début du Tour du Joueur ${state.turn} ---`);
-            
+
+            // Réinitialiser la capacité d'attaque des cartes du joueur qui commence son tour
+            if (Array.isArray(state.field[state.turn])) {
+                state.field[state.turn].forEach(c => c.hasAttacked = false);
+            }
+
+            logMessage(`--- Tour du Joueur ${state.turn} ---`);
             sendState();
             render();
         }
 
-        render();
+        function aiTurn() {
+            logMessage("L'IA réfléchit...");
+            setTimeout(() => {
+                // L'IA joue une carte si possible
+                for (let i = 0; i < state.hand[2].length; i++) {
+                    let card = state.hand[2][i];
+                    if (state.energy[2] >= card.cost) {
+                        state.energy[2] -= card.cost;
+                        state.hand[2].splice(i, 1);
+                        if (!Array.isArray(state.field[2])) state.field[2] = [];
+                        card.hasAttacked = true;
+                        state.field[2].push(card);
+                        logMessage(`L'IA déploie ${card.name} !`);
+                        break;
+                    }
+                }
+                render();
+
+                // L'IA attaque avec ses cartes disponibles
+                setTimeout(() => {
+                    if (Array.isArray(state.field[2])) {
+                        for (let i = 0; i < state.field[2].length; i++) {
+                            let attacker = state.field[2][i];
+                            if (!attacker.hasAttacked && state.field[1].length > 0) {
+                                let defender = state.field[1][0];
+                                logMessage(`IA : ${attacker.name} attaque ${defender.name} !`);
+                                if (attacker.atk >= defender.def) {
+                                    state.field[1].splice(0, 1);
+                                    let damage = attacker.atk;
+                                    state.hp[1] -= damage;
+                                    logMessage(`Ta carte ${defender.name} est détruite et tu subis ${damage} dégâts !`);
+                                } else {
+                                    logMessage(`Ta carte ${defender.name} a résisté.`);
+                                }
+                                attacker.hasAttacked = true;
+                                break;
+                            }
+                        }
+                    }
+                    render();
+                    setTimeout(() => switchTurn(), 800);
+                }, 800);
+            }, 800);
+        }
     </script>
 </body>
 </html>
