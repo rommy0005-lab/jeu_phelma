@@ -21,18 +21,20 @@
             box-sizing: border-box;
         }
 
-        /* Fond de concert */
+        /* Fond de concert dynamique */
         .hell-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
+            height: 100vw; /* modifiable dynamiquement */
             height: 100vh;
             z-index: -1;
             overflow: hidden;
             background: url('concert-death.jpg') no-repeat center center fixed;
             background-size: cover;
             filter: brightness(0.9) contrast(1.25) saturate(1.3);
+            transition: background-image 0.5s ease-in-out;
         }
 
         .hell-background::after {
@@ -159,6 +161,22 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
 
+        /* Zone de Terrain globale */
+        .field-zone-banner {
+            background: rgba(40, 15, 5, 0.85);
+            border: 2px solid #ff3d00;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 15px rgba(255, 61, 0, 0.4);
+        }
+
         .board {
             display: flex;
             flex-direction: column;
@@ -200,7 +218,7 @@
             background: linear-gradient(135deg, rgba(40, 20, 20, 0.9) 0%, rgba(15, 8, 8, 0.9) 100%);
             border: 2px solid #ffd700;
             border-radius: 8px;
-            width: clamp(90px, 22vw, 120px);
+            width: clamp(100px, 24vw, 130px);
             padding: 4px;
             display: flex;
             flex-direction: column;
@@ -228,12 +246,11 @@
         .card.has-attacked {
             opacity: 0.5;
             filter: grayscale(60%);
-            cursor: not-allowed;
         }
 
         .card-img-container {
             width: 100%;
-            height: clamp(80px, 18vw, 110px);
+            height: clamp(75px, 16vw, 100px);
             border-radius: 4px;
             overflow: hidden;
             border: 1px solid #444;
@@ -266,6 +283,23 @@
             text-align: center;
             color: #ffaa44;
             font-family: monospace;
+        }
+
+        .effect-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            font-size: clamp(0.55em, 1.4vw, 0.65em);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 3px;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .effect-btn:hover {
+            background: #c0392b;
         }
 
         .deck-grid {
@@ -324,7 +358,6 @@
             flex-shrink: 0;
         }
 
-        /* Panneau d'effet en jeu / inspection global */
         #game-inspect-panel {
             background: rgba(25, 12, 12, 0.85);
             border: 1px solid #ff8c00;
@@ -411,7 +444,7 @@
 </head>
 <body>
 
-    <div class="hell-background"></div>
+    <div class="hell-background" id="game-bg"></div>
 
     <audio id="bg-music" loop>
         <source src="Soul Evisceration.mp3" type="audio/mpeg">
@@ -466,6 +499,12 @@
             <div>Énergie J2 : <span id="energy-p2">3</span>/10</div>
         </div>
 
+        <!-- Zone d'affichage du Terrain actif -->
+        <div class="field-zone-banner">
+            <div>🌍 <strong>Zone Terrain :</strong> <span id="active-terrain-name" style="color: #ffd700;">Aucun terrain actif</span></div>
+            <div id="active-terrain-desc" style="font-size: 0.8em; color: #aaa; font-style: italic;">Le fond du jeu s'adaptera selon le terrain en jeu.</div>
+        </div>
+
         <!-- Panneau d'effet actif en jeu -->
         <div id="game-inspect-panel">
             <div id="inspect-img-container"><img id="inspect-img" src="cartes/33590.png" alt="Carte"></div>
@@ -473,6 +512,12 @@
                 <div id="inspect-title" style="color: #ffd700; font-weight: bold; font-size: 0.9em;">Sélectionne une carte pour lire son effet</div>
                 <div id="inspect-desc" style="color: #ddd; font-size: 0.8em; margin-top: 2px;">Effet : Aucun effet particulier (Unité de base).</div>
             </div>
+        </div>
+
+        <!-- Zone Par terre (Cartes détruites) -->
+        <div class="player-zone" style="margin-bottom: 10px; min-height: 100px; border-color: rgba(255, 61, 0, 0.7); background: rgba(30, 10, 10, 0.75);">
+            <h3>Par terre (Cartes détruites)</h3>
+            <div id="ground-cards" class="hand"></div>
         </div>
 
         <div class="board">
@@ -507,12 +552,14 @@
     <script>
         const allCards = [
             {
-                name: "Romolo", atk: 700, def: 1800, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +1000 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
+                name: "Romolo", atk: 700, def: 1800, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +500 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
                 evolutions: [
                     { name: "Balayeur de Femmes", desc: "Invoque la carte terrain Sol glissant. Immunisé contre les effets des cartes terrains. +500 ATK par carte attribut Femme sur le terrain. -500 ATK pour les cartes avec attribut femmes. Perd la possibilité d'attaquer pendant le nombre de tour égale au nombre de cartes auxquelles il a attribué l'attribut femme en 1 tour (max 3 par tour). Évolue en Le Balayeur final lorsque son attaque dépasse 4000.", image: "cartes/33592.png", atk: 2000, def: 2000 },
                     { name: "Balayeur Ultime", desc: "Balaye toutes les cartes attribut Femmes sur le terrain, cet effet ne peux pas être contrasté (1 fois par tour). Il invoque Mohamed Suicmez en balayant 1 femme. Une fois par tour, attribu un attribut femme à toutes les cartes sur le terrain. Si une carte est déjà femme, elle se transforme en la carte Terrain : Sol.", image: "cartes/33597.png", atk: 4000, def: 3000 }
                 ]
             },
+            {name: "André Jawad", atk: 1500, def: 1500, cost: 2, stage: 1, image: "cartes/andre_jawad.png", desc: "Invoqué par l'effet de Romolo."},
+            {name: "Mohamed Suicmez", atk: 1500, def: 2500, cost: 4, stage: 1, image: "cartes/mohamed_suicmez.png", desc: "Invoqué par le Balayeur Ultime."},
             {
                 name: "Carlos Alcaraz", atk: 1500, def: 1600, cost: 3, stage: 1, image: "cartes/Carlos 1.png", desc: "Une fois par tour peux sauver une carte de la destruction en opérant un ace. Au bout de 2 ace Evolue en la carte : Omar Hachicha",
                 evolutions: [{name: "Omar Hachicha", atk: 4000, def: 3800, stage : 2, image: "cartes/Carlos 2.png", desc: "Cette carte perd 500 d'attaque par tour, mais active la carte terrain Sfax, tant que le terrain est actif Omar est invincible"}]
@@ -569,10 +616,240 @@
             energy: { 1: 3, 2: 3 },
             maxEnergy: { 1: 3, 2: 3 },
             hand: { 1: [], 2: [] },
-            field: { 1: [], 2: [] }
+            field: { 1: [], 2: [] },
+            ground: [],
+            activeTerrain: null // Stocke { name, image, desc }
         };
         let peer = null, conn = null, myPlayerNum = null;
         let selectedAttackerIndex = null;
+
+        // ==========================================
+        // SYSTÈME DE GESTION DES TERRAINS ET ATK
+        // ==========================================
+
+        function activateTerrain(terrainName, terrainImage, terrainDesc) {
+            state.activeTerrain = {
+                name: terrainName,
+                image: terrainImage,
+                desc: terrainDesc
+            };
+            logMessage(`🌍 TERRAIN ACTIVÉ : ${terrainName} !`);
+            updateTerrainDisplay();
+        }
+
+        function updateTerrainDisplay() {
+            const nameEl = document.getElementById('active-terrain-name');
+            const descEl = document.getElementById('active-terrain-desc');
+            const bgEl = document.getElementById('game-bg');
+
+            if (state.activeTerrain) {
+                nameEl.innerText = state.activeTerrain.name;
+                descEl.innerText = state.activeTerrain.desc;
+                bgEl.style.backgroundImage = `url('${state.activeTerrain.image}')`;
+            } else {
+                nameEl.innerText = "Aucun terrain actif";
+                descEl.innerText = "Le fond du jeu s'adaptera selon le terrain en jeu.";
+                bgEl.style.backgroundImage = `url('concert-death.jpg')`;
+            }
+        }
+
+        function countFemmeOnField() {
+            let count = 0;
+            [1, 2].forEach(p => {
+                if (Array.isArray(state.field[p])) {
+                    state.field[p].forEach(c => {
+                        if (c.attributes && c.attributes.includes("femme")) count++;
+                    });
+                }
+            });
+            return count;
+        }
+
+        function getCardEffectiveAtk(card, playerNum) {
+            let baseAtk = card.atk || 0;
+
+            if (card.name === "Romolo") {
+                baseAtk += countFemmeOnField() * 500;
+            }
+
+            if (card.name === "Balayeur de Femmes") {
+                baseAtk += (countFemmeOnField() * 500);
+                if (card.attributes && card.attributes.includes("femme")) {
+                    baseAtk -= 500;
+                }
+            }
+
+            if (card.name === "Aura Pablet") {
+                let opponentNum = playerNum === 1 ? 2 : 1;
+                let maxOpponentAtk = 0;
+                if (state.field[opponentNum] && state.field[opponentNum].length > 0) {
+                    maxOpponentAtk = Math.max(...state.field[opponentNum].map(c => c.atk || 0));
+                }
+                baseAtk = maxOpponentAtk + 3000;
+            }
+
+            return Math.max(0, baseAtk);
+        }
+
+        // ==========================================
+        // SYSTÈME DE VÉRIFICATION ET ÉVOLUTION MANUELLE
+        // ==========================================
+
+        function canCardEvolve(card, playerNum) {
+            let currentAtk = getCardEffectiveAtk(card, playerNum);
+
+            if (card.name === "Romolo" && countFemmeOnField() >= 2) return true;
+            if (card.name === "Balayeur de Femmes" && currentAtk > 4000) return true;
+            if (card.name === "Carlos Alcaraz" && (card.aceCount || 0) >= 2) return true;
+            if (card.name === "Hom Hugo" && (card.effectActivationCount || 0) >= 2) return true;
+            if (card.name === "Hom Chasseur de Nain" && (card.attackedCount || 0) >= 2) return true;
+            if (card.name === "Homme Bus Île de France" && (card.turnsOnGround || 0) >= 2) return true;
+
+            return false;
+        }
+
+        function triggerManualEvolution(playerNum, cardIndex) {
+            let card = state.field[playerNum][cardIndex];
+            if (!card || !card.evolutions || card.evolutions.length === 0) return;
+
+            let nextEvo = card.evolutions[0];
+            card.name = nextEvo.name;
+            card.atk = nextEvo.atk;
+            card.def = nextEvo.def;
+            if (nextEvo.desc) card.desc = nextEvo.desc;
+            if (nextEvo.image) card.image = nextEvo.image;
+
+            card.evolutions = card.evolutions.slice(1);
+
+            logMessage(`✨ ÉVOLUTION MANUELLE ! La carte devient : ${card.name} !`);
+            sendState();
+            render();
+        }
+
+        // ==========================================
+        // SYSTÈME D'ACTIVATION DES EFFETS DE CARTES
+        // ==========================================
+
+        function triggerCardEffectAction(playerNum, cardIndex) {
+            let card = state.field[playerNum][cardIndex];
+            if (!card) return;
+
+            if (state.turn !== playerNum) {
+                return logMessage("Ce n'est pas ton tour d'activer un effet !");
+            }
+
+            logMessage(`Activation de l'effet de : ${card.name}`);
+
+            if (card.name === "Romolo") {
+                if (state.romoloEffectUsedThisTurn) {
+                    return logMessage("Romolo a déjà utilisé son effet ce tour-ci !");
+                }
+
+                let choice = prompt("Choisis l'action de Romolo :\n1. Transformer une carte ennemie en 'Femme'\n2. Enlever un attribut 'Femme' pour invoquer André Jawad");
+
+                if (choice === "1") {
+                    let opponentNum = playerNum === 1 ? 2 : 1;
+                    if (!state.field[opponentNum] || state.field[opponentNum].length === 0) {
+                        return logMessage("Aucune cible ennemie sur le terrain.");
+                    }
+                    let targetIdx = parseInt(prompt("Index de la carte adverse à cibler (0, 1, ...) :")) || 0;
+                    if (state.field[opponentNum][targetIdx]) {
+                        if (!state.field[opponentNum][targetIdx].attributes) state.field[opponentNum][targetIdx].attributes = [];
+                        state.field[opponentNum][targetIdx].attributes.push("femme");
+                        logMessage(`Romolo a attribué l'attribut 'Femme' à ${state.field[opponentNum][targetIdx].name} !`);
+                        state.romoloEffectUsedThisTurn = true;
+                    }
+                } else if (choice === "2") {
+                    let removed = false;
+                    [1, 2].forEach(p => {
+                        if (!removed && state.field[p]) {
+                            state.field[p].forEach(c => {
+                                if (!removed && c.attributes && c.attributes.includes("femme")) {
+                                    c.attributes = c.attributes.filter(attr => attr !== "femme");
+                                    removed = true;
+                                }
+                            });
+                        }
+                    });
+
+                    let andreCard = { name: "André Jawad", atk: 1500, def: 1500, cost: 2, desc: "Invoqué par Romolo." };
+                    state.field[playerNum].push(andreCard);
+                    logMessage("Romolo retire un attribut Femme et invoque André Jawad sur le terrain !");
+                    state.romoloEffectUsedThisTurn = true;
+                }
+            }
+            else if (card.name === "Balayeur de Femmes") {
+                if (card.balayeurEffectUsedThisTurn) {
+                    return logMessage("Le Balayeur de Femmes a déjà utilisé son effet ce tour-ci !");
+                }
+
+                // Activation du Terrain associé au Balayeur
+                activateTerrain("Sol Glissant", "concert-death.jpg", "Un terrain glissant qui perturbe les appuis ennemis.");
+
+                let targetsCountStr = prompt("Combien de cartes adverses souhaites-tu cibler pour leur attribuer l'attribut 'Femme' ? (Max 3) :");
+                let targetsCount = parseInt(targetsCountStr);
+                if (isNaN(targetsCount) || targetsCount < 0) targetsCount = 0;
+                if (targetsCount > 3) targetsCount = 3;
+
+                let opponentNum = playerNum === 1 ? 2 : 1;
+                let appliedCount = 0;
+
+                for (let i = 0; i < targetsCount; i++) {
+                    if (!state.field[opponentNum] || state.field[opponentNum].length === 0) break;
+                    let targetIdx = parseInt(prompt(`Index de la carte adverse #${i + 1} à cibler :`)) || 0;
+                    if (state.field[opponentNum][targetIdx]) {
+                        if (!state.field[opponentNum][targetIdx].attributes) state.field[opponentNum][targetIdx].attributes = [];
+                        state.field[opponentNum][targetIdx].attributes.push("femme");
+                        logMessage(`Le Balayeur de Femmes attribue l'attribut 'Femme' à ${state.field[opponentNum][targetIdx].name}.`);
+                        appliedCount++;
+                    }
+                }
+
+                if (appliedCount > 0) {
+                    card.skipAttackTurns = appliedCount;
+                    card.hasAttacked = true;
+                    logMessage(`Le Balayeur de Femmes perd la possibilité d'attaquer pendant ${appliedCount} tour(s).`);
+                }
+
+                card.balayeurEffectUsedThisTurn = true;
+            }
+            else if (card.name === "Balayeur Ultime") {
+                [1, 2].forEach(p => {
+                    if (Array.isArray(state.field[p])) {
+                        state.field[p] = state.field[p].filter(c => {
+                            let isFemme = c.attributes && c.attributes.includes("femme");
+                            if (isFemme) {
+                                state.ground.push(c);
+                                logMessage(`${c.name} a été balayé(e) par le Balayeur Ultime !`);
+                            }
+                            return !isFemme;
+                        });
+                    }
+                });
+
+                let hasMohamed = state.field[playerNum].some(c => c.name === "Mohamed Suicmez");
+                if (!hasMohamed) {
+                    let mohamedCard = { name: "Mohamed Suicmez", atk: 3000, def: 2500, cost: 4, desc: "Invoqué par le Balayeur Ultime." };
+                    state.field[playerNum].push(mohamedCard);
+                    logMessage("Mohamed Suicmez entre sur le terrain !");
+                }
+            }
+            else if (card.name === "Omar Hachicha") {
+                activateTerrain("Sfax", "cartes/Carlos 2.png", "La ville natale de Sfax insuffle une invincibilité totale à Omar tant qu'il y est.");
+            }
+            else if (card.name === "Hom Hugo") {
+                activateTerrain("Châtelet-les-Halles", "cartes/33631.png", "Le hub labyrinthique de Châtelet-les-Halles modifie l'espace-temps.");
+            }
+            else if (card.name === "Hom Moustache Commune Îles de France") {
+                activateTerrain("Moyen de Locomotion", "cartes/33637.png", "Les transports en commun traversent la carte à pleine vitesse.");
+            }
+            else {
+                logMessage(`La carte ${card.name} n'a pas d'effet actif spécifique pour le moment.`);
+            }
+
+            sendState();
+            render();
+        }
 
         function playMusicAndShowMode(mode) {
             const music = document.getElementById('bg-music');
@@ -714,10 +991,12 @@
             }
         }
 
-        function inspectCardInGame(card) {
+        function inspectCardInGame(card, playerNum) {
             document.getElementById('inspect-img').src = card.image;
-            document.getElementById('inspect-title').innerText = `${card.name} (ATK: ${card.atk || card.cost || '?'}, DEF: ${card.def || '?'})`;
-            document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}`;
+            let effectiveAtk = playerNum ? getCardEffectiveAtk(card, playerNum) : (card.atk || 0);
+            document.getElementById('inspect-title').innerText = `${card.name} (ATK: ${effectiveAtk}, DEF: ${card.def || '?'})`;
+            let attrText = card.attributes && card.attributes.length > 0 ? ` | Attributs: ${card.attributes.join(', ')}` : "";
+            document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}${attrText}`;
         }
 
         function toggleSelectCard(index, element, card) {
@@ -812,12 +1091,35 @@
             document.getElementById('energy-p1').innerText = state.energy[1];
             document.getElementById('energy-p2').innerText = state.energy[2];
 
+            updateTerrainDisplay();
             renderHand(1);
             renderField(1);
             renderHand(2, !isAI && myPlayerNum !== 2);
             renderField(2);
+            renderGround();
             updateBattleText();
             checkGameOver();
+        }
+
+        function renderGround() {
+            const groundEl = document.getElementById('ground-cards');
+            if (!groundEl) return;
+            groundEl.innerHTML = '';
+            if (!state.ground) state.ground = [];
+
+            state.ground.forEach((card) => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.style.opacity = '0.6';
+                div.style.filter = 'grayscale(80%)';
+                div.innerHTML = `
+                    <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
+                    <div class="card-title">${card.name}</div>
+                    <div class="card-stats" style="color: #ff4444;">RIP</div>
+                `;
+                div.onmouseenter = () => inspectCardInGame(card);
+                groundEl.appendChild(div);
+            });
         }
 
         function updateBattleText() {
@@ -852,10 +1154,10 @@
                         <div class="card-title">${card.name}</div>
                         <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
                     `;
-                    div.onmouseenter = () => inspectCardInGame(card);
+                    div.onmouseenter = () => inspectCardInGame(card, player);
                     div.onclick = () => {
                         triggerCardEffect(div, card.cost);
-                        inspectCardInGame(card);
+                        inspectCardInGame(card, player);
                         playCard(player, index);
                     };
                 }
@@ -888,16 +1190,21 @@
                     div.style.borderColor = (player === 1) ? '#ffd700' : '#ff8c00';
                 }
 
+                let effectiveAtk = getCardEffectiveAtk(card, player);
+                let showEvolveBtn = canCardEvolve(card, player) && card.evolutions && card.evolutions.length > 0;
+
                 div.innerHTML = `
                     <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                     <div class="card-title">${card.name}</div>
-                    <div class="card-stats">⚔️ ${card.atk} | 🛡️ ${card.def}</div>
+                    <div class="card-stats">⚔️ ${effectiveAtk} | 🛡️ ${card.def}</div>
+                    <button class="effect-btn" onclick="event.stopPropagation(); triggerCardEffectAction(${player}, ${index})">Effet</button>
+                    ${showEvolveBtn ? `<button class="effect-btn" style="background: #27ae60;" onclick="event.stopPropagation(); triggerManualEvolution(${player}, ${index})">Évoluer</button>` : ''}
                 `;
 
-                div.onmouseenter = () => inspectCardInGame(card);
+                div.onmouseenter = () => inspectCardInGame(card, player);
                 div.onclick = () => {
                     triggerCardEffect(div, card.cost);
-                    inspectCardInGame(card);
+                    inspectCardInGame(card, player);
                     if (!canControl) return;
 
                     if (player === activePlayer) {
@@ -932,6 +1239,7 @@
             if (!Array.isArray(state.field[player])) state.field[player] = [];
 
             card.hasAttacked = true;
+            card.turnsOnGround = (card.turnsOnGround || 0) + 1;
             state.field[player].push(card);
             logMessage(`Joueur ${player} déploie ${card.name} (épuisée ce tour).`);
 
@@ -949,15 +1257,21 @@
             if (!attacker || !defender) return;
             if (attacker.hasAttacked) return logMessage("Cette carte a déjà attaqué ce tour !");
 
+            let attackerAtk = getCardEffectiveAtk(attacker, activePlayer);
             logMessage(`${attacker.name} attaque ${defender.name} !`);
 
-            if (attacker.atk >= defender.def) {
-                state.field[defendingPlayer].splice(defenderIdx, 1);
-                let damage = attacker.atk;
+            attacker.attackedCount = (attacker.attackedCount || 0) + 1;
+
+            if (attackerAtk >= defender.def) {
+                let destroyedCard = state.field[defendingPlayer].splice(defenderIdx, 1)[0];
+                if (!state.ground) state.ground = [];
+                state.ground.push(destroyedCard);
+
+                let damage = attackerAtk;
                 state.hp[defendingPlayer] -= damage;
                 logMessage(`Impact critique ! ${defender.name} est détruite et le Joueur ${defendingPlayer} subit ${damage} dégâts !`);
             } else {
-                let minorDamage = Math.max(100, attacker.atk - defender.def);
+                let minorDamage = Math.max(100, attackerAtk - defender.def);
                 state.hp[defendingPlayer] -= minorDamage;
                 logMessage(`${defender.name} encaisse, mais le Joueur ${defendingPlayer} perd ${minorDamage} PV.`);
             }
@@ -983,8 +1297,19 @@
             state.maxEnergy[state.turn] = Math.min(state.maxEnergy[state.turn] + 1, 10);
             state.energy[state.turn] = state.maxEnergy[state.turn];
 
+            state.romoloEffectUsedThisTurn = false;
+
             if (Array.isArray(state.field[state.turn])) {
-                state.field[state.turn].forEach(c => c.hasAttacked = false);
+                state.field[state.turn].forEach(c => {
+                    c.balayeurEffectUsedThisTurn = false;
+                    if (c.skipAttackTurns && c.skipAttackTurns > 0) {
+                        c.skipAttackTurns--;
+                        c.hasAttacked = true;
+                    } else {
+                        c.hasAttacked = false;
+                    }
+                    c.turnsOnGround = (c.turnsOnGround || 0) + 1;
+                });
             }
 
             logMessage(`--- Tour du Joueur ${state.turn} ---`);
@@ -1002,6 +1327,7 @@
                         state.hand[2].splice(i, 1);
                         if (!Array.isArray(state.field[2])) state.field[2] = [];
                         card.hasAttacked = true;
+                        card.turnsOnGround = (card.turnsOnGround || 0) + 1;
                         state.field[2].push(card);
                         logMessage(`L'IA déploie ${card.name} !`);
                         break;
@@ -1015,10 +1341,15 @@
                             let attacker = state.field[2][i];
                             if (!attacker.hasAttacked && state.field[1].length > 0) {
                                 let defender = state.field[1][0];
+                                let aiAtk = getCardEffectiveAtk(attacker, 2);
                                 logMessage(`IA : ${attacker.name} attaque ${defender.name} !`);
-                                if (attacker.atk >= defender.def) {
-                                    state.field[1].splice(0, 1);
-                                    let damage = attacker.atk;
+                                attacker.attackedCount = (attacker.attackedCount || 0) + 1;
+                                if (aiAtk >= defender.def) {
+                                    let destroyedCard = state.field[1].splice(0, 1)[0];
+                                    if (!state.ground) state.ground = [];
+                                    state.ground.path ? state.ground.push(destroyedCard) : state.ground.push(destroyedCard);
+
+                                    let damage = aiAtk;
                                     state.hp[1] -= damage;
                                     logMessage(`Ta carte ${defender.name} est détruite et tu subis ${damage} dégâts !`);
                                 } else {
