@@ -274,8 +274,79 @@
             gap: 10px;
             justify-content: center;
             margin: 15px 0;
-            max-height: 60vh;
+            max-height: 50vh;
             overflow-y: auto;
+        }
+
+        #builder-layout {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        #deck-selection-area {
+            flex: 2;
+            min-width: 300px;
+        }
+
+        #evolution-preview-panel {
+            flex: 1;
+            background: rgba(30, 15, 15, 0.9);
+            border: 1px solid #ff8c00;
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 260px;
+            text-align: left;
+            box-sizing: border-box;
+        }
+
+        .evo-step {
+            background: rgba(20, 10, 10, 0.8);
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #ff3d00;
+            font-size: 0.9em;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .evo-step img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid #555;
+            flex-shrink: 0;
+        }
+
+        /* Panneau d'effet en jeu / inspection global */
+        #game-inspect-panel {
+            background: rgba(25, 12, 12, 0.85);
+            border: 1px solid #ff8c00;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #game-inspect-panel img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            background: #000;
+            border-radius: 4px;
+            border: 1px solid #ffd700;
         }
 
         .log {
@@ -371,8 +442,18 @@
 
     <div id="deck-builder" class="screen hidden">
         <h2>Création de ton Deck</h2>
-        <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Sélectionne tes cartes (<span id="selected-count">0</span> / 6)</p>
-        <div class="deck-grid" id="builder-grid"></div>
+        <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Sélectionne tes cartes de départ (Stage 1 uniquement) — (<span id="selected-count">0</span> / 6)</p>
+
+        <div id="builder-layout">
+            <div id="deck-selection-area">
+                <div class="deck-grid" id="builder-grid"></div>
+            </div>
+            <div id="evolution-preview-panel">
+                <h3 style="margin-top:0; font-size: 1.1em; color:#ffd700;">Informations & Évolution</h3>
+                <div id="evolution-stages-content"><p style="color:#aaa; font-style:italic; font-size:0.85em;">Clique ou survole une carte pour voir son effet et ses évolutions.</p></div>
+            </div>
+        </div>
+
         <button onclick="validateDeck()" id="validate-deck-btn" disabled style="opacity: 0.5; margin-top: 15px;">Valider le Deck</button>
     </div>
 
@@ -383,6 +464,15 @@
             <div>Énergie J1 : <span id="energy-p1">3</span>/10</div>
             <div>PV J2 : <span id="hp-p2" style="color: #ff4444; font-weight: bold;">10000</span></div>
             <div>Énergie J2 : <span id="energy-p2">3</span>/10</div>
+        </div>
+
+        <!-- Panneau d'effet actif en jeu -->
+        <div id="game-inspect-panel">
+            <div id="inspect-img-container"><img id="inspect-img" src="cartes/33590.png" alt="Carte"></div>
+            <div style="flex: 1;">
+                <div id="inspect-title" style="color: #ffd700; font-weight: bold; font-size: 0.9em;">Sélectionne une carte pour lire son effet</div>
+                <div id="inspect-desc" style="color: #ddd; font-size: 0.8em; margin-top: 2px;">Effet : Aucun effet particulier (Unité de base).</div>
+            </div>
         </div>
 
         <div class="board">
@@ -416,16 +506,58 @@
 
     <script>
         const allCards = [
-            { name: "Romolo", atk: 800, def: 1000, cost: 2, image: "cartes/33590.png" },
-            { name: "Balayeur de Femmes", atk: 2000, def: 2000, cost: 4, image: "cartes/33592.png" },
-            { name: "Balayeur Ultime", atk: 4000, def: 3000, cost: 6, image: "cartes/33597.png" },
-            { name: "Pablo Rubiolo", atk: 5000, def: 5000, cost: 7, image: "cartes/33588.png" },
-            { name: "Aura Pablet", atk: 3500, def: 9999, cost: 8, image: "cartes/33589.png" },
-            { name: "Homme Castagnet", atk: 2000, def: 500, cost: 3, image: "cartes/33586.png" },
-            { name: "Hom Hugo", atk: 1500, def: 1800, cost: 2, image: "cartes/33631.png" },
-            { name: "Hom Chasseur de Nain", atk: 2300, def: 2000, cost: 2, image: "cartes/33634.png" },
-            { name: "Homme Bus Île de France", atk: 0, def: 0, cost: 1, image: "cartes/33636.png" },
-            { name: "Hom Moustache Commune Îles de France", atk: 100, def: 2400, cost: 2, image: "cartes/33637.png" }
+            {
+                name: "Romolo", atk: 800, def: 1000, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +1000 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
+                evolutions: [
+                    { name: "Balayeur de Femmes", desc: "Invoque la carte terrain Sol glissant. Immunisé contre les effets des cartes terrains. +500 ATK par carte attribut Femme sur le terrain. -500 ATK pour les cartes avec attribut femmes. Perd la possibilité d'attaquer pendant le nombre de tour égale au nombre de cartes auxquelles il a attribué l'attribut femme en 1 tour (max 3 par tour). Évolue en Le Balayeur final lorsque son attaque dépasse 4000.", image: "cartes/33592.png", atk: 2000, def: 2000 },
+                    { name: "Balayeur Ultime", desc: "Balaye toutes les cartes attribut Femmes sur le terrain, cet effet ne peux pas être contrasté (1 fois par tour). Il invoque Mohamed Suicmez en balayant 1 femme. Une fois par tour, attribu un attribut femme à toutes les cartes sur le terrain. Si une carte est déjà femme, elle se transforme en la carte Terrain : Sol.", image: "cartes/33597.png", atk: 4000, def: 3000 }
+                ]
+            },
+            {
+                name: "Carlos Alcaraz", atk: 1500, def: 1300, cost: 3, stage: 1, image: "cartes/Carlos 1.png", desc: "Une fois par tour peux sauver une carte de la destruction en opérant un ace. Au bout de 2 ace Evolue en la carte : Omar Hachicha",
+                evolutions: [{name: "Omar Hachicha", atk: 4000, def: 3800, stage : 2, image: "cartes/Carlos 2.png", desc: "Cette carte perd 500 d'attaque par tour, mais active la carte terrain Sfax, tant que le terrain est actif Omar est invincible"}]
+            },
+            {
+                name: "Balayeur de Femmes", atk: 2000, def: 2000, cost: 4, stage: 2, image: "cartes/33592.png", desc: "Balaye les faiblesses adverses avec une efficacité redoutable.",
+                evolutions: [
+                    { name: "Balayeur Ultime", desc: "Puissance maximale atteinte sur le terrain.", image: "cartes/33597.png", atk: 4000, def: 3000 }
+                ]
+            },
+            {
+                name: "Balayeur Ultime", atk: 4000, def: 3000, cost: 6, stage: 3, image: "cartes/33597.png", desc: "Puissance maximale atteinte sur le terrain. Inarrêtable.",
+                evolutions: []
+            },
+            {
+                name: "Pablo Rubiolo", atk: 5000, def: 5000, cost: 10, stage: 1, image: "cartes/33588.png", desc: "Annule l'effet de toutes les cartes sur le terrain le tour où il est invoqué, impossible de le cibler avec les effets de cartes. Cette carte perd -500 ATK à chaque tour qui passe. On peut invoquer cette carte pour la moitié de son coût d'énergie (5) mais vous devez gagner en moins de 2 tours sinon on perd le jeu.",
+                evolutions: [{ name: "Aura Pablet", desc: "L'attaque de cette carte est l'attaque la plus haute des cartes de l'adversaire, + 3000. Immunisé contre tout", image: "cartes/33589.png", atk: 4500, def: 9999 }]
+            },
+            {
+                name: "Aura Pablet", atk: 4500, def: 9999, cost: 8, stage: 2, image: "cartes/33589.png", desc: "L'attaque de cette carte est l'attaque la plus haute des cartes de l'adversaire, + 3000. Immunisé contre tout",
+                evolutions: []
+            },
+            {
+                name: "Homme Castagnet", atk: 2000, def: 500, cost: 3, stage: 1, image: "cartes/33586.png", desc: "La première fois qu'une carte active son effet, invoque la carte Mysoginie. Rajoute +1 au compteur Mysoginie à chaque activation de carte. Si le compteur Mysoginie a atteint +5, invoque un De Minaur sur le terrain.",
+                evolutions: []
+            },
+            {
+                name: "Hom Hugo", atk: 1500, def: 1800, cost: 2, stage: 1, image: "cartes/33631.png", desc: "Si 2 cartes sont sur le terrain, active le terrain : Châtelet-les-Halles. Si un effet terrain est activé, réduit le coût d'une des cartes dans la main de 2. Si cette carte active son effet pour la 2ème fois, évolue la carte en : Hom chasseur de nains.",
+                evolutions: [{ name: "Hom Chasseur de Nain", desc: "Permet d'attaquer chaque carte adverse une fois par tour. Si un effet terrain est activé, empêche une carte adverse d'attaquer pendant 1 tour. Cette carte ne peut pas être détruite par une attaque normale. Si cette carte a été attaquée 2 fois, évolue en Hom Géant Kombucha Steven Seagal", image: "cartes/33634.png", atk: 2300, def: 2000 }]
+            },
+            {
+                name: "Hom Chasseur de Nain", atk: 2300, def: 2000, cost: 2, stage: 2, image: "cartes/33634.png", desc: "Spécialisé dans la traque rapide de petites unités.",
+                evolutions: []
+            },
+            {
+                name: "Homme Bus Île de France", atk: 0, def: 0, cost: 1, stage: 1, image: "cartes/33636.png", desc: "Invoque un bus et se détruit. À partir de 2 tours après sa mort, invoque son évolution: Hom Moustache Commune Îles-de-France.",
+                evolutions: [{ name: "Hom Moustache Commune Îles de France", desc: "Active le terrain : moyen de locomotion, annule les effet de toutes les cartes pendant 1 tour le tour où il est invoqué. Si un terrain active son effet invoque un bus. Au bout de 3 bus sur le terrain, détruit tout les bus et inflige 1500 de degat pour chaque bus détruit.", image: "cartes/33637.png", atk: 100, def: 2400 }]
+            },
+            {
+                name: "Hom Moustache Commune Îles de France", atk: 100, def: 2400, cost: 2, stage: 2, image: "cartes/33637.png", desc: "Évolution moustache conférant une excellente protection.",
+                evolutions: [
+                    { name: "Moustache Impériale", desc: "Défense absolue contre les attaques frontales.", image: "cartes/33637.png", atk: 500, def: 3500 },
+                    { name: "Moustache Légendaire", desc: "Mur infranchissable légendaire.", image: "cartes/33637.png", atk: 1000, def: 5000 }
+                ]
+            }
         ];
 
         let isAI = false;
@@ -532,23 +664,64 @@
         function initDeckBuilder() {
             const grid = document.getElementById('builder-grid');
             grid.innerHTML = '';
+
             allCards.forEach((card, index) => {
+                if (card.stage !== 1) return;
+
                 const div = document.createElement('div');
                 div.className = 'card';
+
+                div.onclick = (e) => {
+                    triggerCardEffect(div, card.cost);
+                    toggleSelectCard(index, div, card);
+                };
+
+                div.onmouseenter = () => {
+                    showEvolutionPreview(card);
+                };
+
                 div.innerHTML = `
                     <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                     <div class="card-title">${card.name}</div>
                     <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
                 `;
-                div.onclick = (e) => {
-                    triggerCardEffect(div, card.cost);
-                    toggleSelectCard(index, div);
-                };
                 grid.appendChild(div);
             });
         }
 
-        function toggleSelectCard(index, element) {
+        function showEvolutionPreview(card) {
+            const container = document.getElementById('evolution-stages-content');
+            container.innerHTML = `
+                <strong style="color:#ffd700;">${card.name} (Stage ${card.stage})</strong>
+                <p style="margin: 5px 0 10px 0; font-size: 0.85em; color: #ddd; font-style: italic;">Effet : ${card.desc || 'Aucun effet particulier.'}</p>
+                <div style="font-size:0.9em; font-weight:bold; color:#ffaa44; margin-bottom:5px;">Évolutions possibles :</div>
+            `;
+            if (card.evolutions && card.evolutions.length > 0) {
+                card.evolutions.forEach((evo, i) => {
+                    container.innerHTML += `
+                        <div class="evo-step">
+                            <img src="${evo.image}" alt="${evo.name}">
+                            <div>
+                                ⬇️ <strong>Évol. ${i + 1} : ${evo.name}</strong><br>
+                                <small style="color:#ffaa44;">⚔️ ${evo.atk} | 🛡️ ${evo.def}</small><br>
+                                <small style="color:#aaa;">${evo.desc}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                container.innerHTML += `<p style="color:#aaa; font-style:italic; font-size:0.85em;">Aucune évolution future (carte fixe ou stade final).</p>`;
+            }
+        }
+
+        function inspectCardInGame(card) {
+            document.getElementById('inspect-img').src = card.image;
+            document.getElementById('inspect-title').innerText = `${card.name} (ATK: ${card.atk || card.cost || '?'}, DEF: ${card.def || '?'})`;
+            document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}`;
+        }
+
+        function toggleSelectCard(index, element, card) {
+            showEvolutionPreview(card);
             const pos = selectedDeckIndices.indexOf(index);
             if (pos > -1) {
                 selectedDeckIndices.splice(pos, 1);
@@ -574,9 +747,10 @@
 
             if (isAI) {
                 let aiDeck = [];
-                let shuffled = [...allCards].sort(() => 0.5 - Math.random());
+                let stage1Cards = allCards.filter(c => c.stage === 1);
+                let shuffled = [...stage1Cards].sort(() => 0.5 - Math.random());
                 for(let i=0; i<6; i++) {
-                    let c = JSON.parse(JSON.stringify(shuffled[i]));
+                    let c = JSON.parse(JSON.stringify(shuffled[i % shuffled.length]));
                     c.hasAttacked = false;
                     aiDeck.push(c);
                 }
@@ -678,8 +852,10 @@
                         <div class="card-title">${card.name}</div>
                         <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
                     `;
+                    div.onmouseenter = () => inspectCardInGame(card);
                     div.onclick = () => {
                         triggerCardEffect(div, card.cost);
+                        inspectCardInGame(card);
                         playCard(player, index);
                     };
                 }
@@ -718,8 +894,10 @@
                     <div class="card-stats">⚔️ ${card.atk} | 🛡️ ${card.def}</div>
                 `;
 
+                div.onmouseenter = () => inspectCardInGame(card);
                 div.onclick = () => {
                     triggerCardEffect(div, card.cost);
+                    inspectCardInGame(card);
                     if (!canControl) return;
 
                     if (player === activePlayer) {
