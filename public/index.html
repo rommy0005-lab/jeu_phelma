@@ -2,11 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Duel de Cartes - Attaque unique par carte</title>
+    <title>Duel de Cartes - Concert Death Metal</title>
+    <!-- Import d'une police gothique depuis Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body {
-            background-color: #0b0b0f;
+            background-color: #1a0808;
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -14,8 +16,86 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
-        h1, h2 { color: #d4af37; text-shadow: 0 0 10px rgba(212,175,55,0.4); text-align: center; }
+
+        /* Fond de concert de death metal bien visible, lumineux et contrasté */
+        .hell-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: url('concert-death.jpg') no-repeat center center fixed;
+            background-size: cover;
+            filter: brightness(0.9) contrast(1.25) saturate(1.3);
+        }
+
+        .hell-background::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 60, 0, 0.15) 0%, rgba(30, 5, 5, 0.35) 100%);
+            animation: concertPulse 6s infinite ease-in-out alternate;
+        }
+
+        @keyframes concertPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.6; }
+        }
+
+        @keyframes clickFire {
+            0% {
+                box-shadow: 0 0 15px #ff3d00, 0 0 30px #ffea00, inset 0 0 15px rgba(255, 61, 0, 0.8);
+                transform: scale(1.06);
+                filter: brightness(1.2);
+            }
+            50% {
+                box-shadow: 0 0 35px #ffea00, 0 0 60px #ff3d00, inset 0 0 25px rgba(255, 234, 0, 0.9);
+                transform: scale(1.12);
+                filter: brightness(1.4);
+            }
+            100% {
+                box-shadow: 0 0 15px #ff3d00, inset 0 0 10px rgba(255, 61, 0, 0.5);
+                transform: scale(1.03);
+                filter: brightness(1);
+            }
+        }
+
+        /* Animation de flammes permanente pour les gros titres */
+        @keyframes textFlame {
+            0% {
+                color: #000000;
+                text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9);
+            }
+            50% {
+                color: #000000;
+                text-shadow: 0 0 15px #ffea00, 0 0 25px #ff3d00, 0 0 40px #ff2200, 2px 2px 4px rgba(0,0,0,0.9);
+            }
+            100% {
+                color: #000000;
+                text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9);
+            }
+        }
+
+        .card.effect-fire {
+            animation: clickFire 0.6s ease-in-out;
+            border-color: #ff3d00 !important;
+        }
+
+        /* Application de la police gothique, des flammes et du texte en noir sur les grands titres */
+        h1, h2 {
+            font-family: 'UnifrakturMaguntia', cursive;
+            letter-spacing: 2px;
+            font-size: 2.8em;
+            animation: textFlame 3s infinite ease-in-out alternate;
+            text-align: center;
+            color: #000000 !important;
+        }
 
         .screen {
             display: flex;
@@ -27,17 +107,29 @@
         .hidden { display: none !important; }
 
         #home-screen {
-            background: #15151c;
-            border: 2px solid #d4af37;
+            background: rgba(20, 10, 10, 0.65);
+            border: 2px solid #ffd700;
             padding: 40px;
             border-radius: 15px;
             margin-top: 50px;
-            box-shadow: 0 0 30px rgba(212,175,55,0.2);
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
             text-align: center;
+            backdrop-filter: blur(4px);
         }
+
+        #deck-builder {
+            background: rgba(20, 10, 10, 0.65);
+            border: 2px solid #ffd700;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+        }
+
         .menu-btn {
-            background: linear-gradient(135deg, #d4af37, #aa820a);
-            color: #0b0b0f;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #000000;
             border: none;
             padding: 15px 30px;
             font-size: 1.1em;
@@ -46,15 +138,16 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             margin: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6);
         }
         .menu-btn:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(212,175,55,0.6);
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.9);
         }
 
         .net-box {
-            background: #121218;
-            border: 1px solid #444;
+            background: rgba(25, 12, 12, 0.75);
+            border: 1px solid #ff8c00;
             padding: 20px;
             border-radius: 10px;
             margin-top: 15px;
@@ -67,10 +160,10 @@
         }
 
         .game-info {
-            background: #15151c;
+            background: rgba(20, 10, 10, 0.7);
             padding: 10px 20px;
             border-radius: 8px;
-            border: 1px solid #333;
+            border: 1px solid #ff8c00;
             margin-bottom: 15px;
             display: flex;
             gap: 20px;
@@ -79,6 +172,8 @@
             box-sizing: border-box;
             justify-content: center;
             flex-wrap: wrap;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
         .board {
             display: flex;
@@ -87,14 +182,16 @@
             width: 100%;
         }
         .player-zone {
-            background: #121218;
-            border: 2px dashed #333;
+            background: rgba(20, 10, 10, 0.65);
+            border: 2px dashed rgba(255, 140, 0, 0.6);
             padding: 15px;
             border-radius: 10px;
             min-height: 200px;
             position: relative;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
-        .player-zone h3 { margin: 0 0 8px 0; color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; }
+        .player-zone h3 { margin: 0 0 8px 0; color: #ffaa44; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; text-shadow: 1px 1px 2px #000; }
         .hand {
             display: flex;
             gap: 12px;
@@ -103,8 +200,8 @@
             min-height: 190px;
         }
         .card {
-            background: linear-gradient(135deg, #23232e 0%, #0e0e13 100%);
-            border: 2px solid #d4af37;
+            background: linear-gradient(135deg, rgba(40, 20, 20, 0.9) 0%, rgba(15, 8, 8, 0.9) 100%);
+            border: 2px solid #ffd700;
             border-radius: 10px;
             width: 130px;
             padding: 6px;
@@ -112,22 +209,24 @@
             flex-direction: column;
             justify-content: space-between;
             cursor: pointer;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.7);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.8);
             transition: all 0.3s;
             flex-shrink: 0;
             position: relative;
+            backdrop-filter: blur(4px);
         }
         .card:hover {
             transform: translateY(-8px) scale(1.03);
-            border-color: #ffe875;
+            border-color: #ffaa00;
+            box-shadow: 0 0 20px rgba(255,170,0,0.7);
         }
         .card.selected {
-            border-color: #76ff03;
-            box-shadow: 0 0 15px rgba(118,255,3, 0.8);
+            border-color: #ff3d00;
+            box-shadow: 0 0 20px rgba(255,61,0, 0.9);
         }
         .card.attacker-selected {
             border-color: #ff3d00;
-            box-shadow: 0 0 15px rgba(255,61,0, 0.9);
+            box-shadow: 0 0 20px rgba(255,61,0, 0.95);
             transform: translateY(-5px);
         }
         .card.has-attacked {
@@ -150,21 +249,22 @@
         .card-title {
             font-weight: bold;
             font-size: 0.7em;
-            color: #d4af37;
+            color: #ffd700;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             margin-top: 4px;
+            text-shadow: 1px 1px 2px #000;
         }
         .card-stats {
             font-size: 0.65em;
             margin: 2px 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.75);
             padding: 2px;
             border-radius: 4px;
             text-align: center;
-            color: #76ff03;
+            color: #ffaa44;
             font-family: monospace;
         }
         .deck-grid {
@@ -176,8 +276,8 @@
         }
         .log {
             margin-top: 15px;
-            background: #111116;
-            border: 1px solid #222;
+            background: rgba(20, 10, 10, 0.75);
+            border: 1px solid #ff8c00;
             padding: 10px;
             width: 100%;
             max-width: 950px;
@@ -185,67 +285,83 @@
             font-size: 0.8em;
             height: 55px;
             overflow-y: auto;
-            color: #aaa;
+            color: #ffd;
             font-family: monospace;
             box-sizing: border-box;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
         button, input {
-            background: linear-gradient(135deg, #d4af37, #aa820a);
-            color: #0b0b0f;
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #000000;
             border: none;
             padding: 8px 15px;
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
         }
-        input { background: #222; color: #fff; border: 1px solid #444; }
+        input { background: rgba(30,15,15,0.9); color: #fff; border: 1px solid #ff8c00; }
 
         #game-over-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(10,5,5,0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 100;
+            backdrop-filter: blur(6px);
         }
     </style>
 </head>
 <body>
 
+    <!-- Fond de concert de death metal bien visible -->
+    <div class="hell-background"></div>
+
+    <!-- Musique de fond -->
+    <audio id="bg-music" loop>
+        <source src="Soul Evisceration.mp3" type="audio/mpeg">
+    </audio>
+
+    <div style="position: fixed; bottom: 15px; right: 15px; z-index: 1000;">
+        <button onclick="toggleMusic()" style="background: rgba(30,15,15,0.85); border: 2px solid #ffd700; color: #ffd700; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);">🎵 Musique</button>
+    </div>
+
     <div id="home-screen" class="screen">
         <h1>DUEL DE CARTES</h1>
-        <p style="color: #aaa;">Choisis ton mode de jeu pour commencer.</p>
+        <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Choisis ton mode de jeu pour commencer.</p>
         <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px;">
-            <button class="menu-btn" onclick="showMode('ai')">Mode Solo (vs IA)</button>
-            <button class="menu-btn" onclick="showMode('multi')">Mode Multijoueur</button>
+            <button class="menu-btn" onclick="playMusicAndShowMode('ai')">Mode Solo (vs IA)</button>
+            <button class="menu-btn" onclick="playMusicAndShowMode('multi')">Mode Multijoueur</button>
         </div>
 
         <div id="multi-panel" class="net-box hidden">
             <h3>Configuration En Ligne</h3>
-            <div>Mon ID : <span id="my-id" style="color: #76ff03; font-weight: bold;">Génération...</span></div>
+            <div>Mon ID : <span id="my-id" style="color: #ffaa44; font-weight: bold;">Génération...</span></div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <input type="text" id="peer-id-input" placeholder="ID de l'adversaire">
                 <button onclick="connectToPeer()">Rejoindre</button>
             </div>
-            <div>Rôle : <span id="my-role" style="color: #d4af37;">En attente</span></div>
+            <div>Rôle : <span id="my-role" style="color: #ffd700;">En attente</span></div>
         </div>
     </div>
 
     <div id="deck-builder" class="screen hidden">
         <h2>Création de ton Deck</h2>
-        <p>Sélectionne tes cartes (<span id="selected-count">0</span> / 6)</p>
+        <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Sélectionne tes cartes (<span id="selected-count">0</span> / 6)</p>
         <div class="deck-grid" id="builder-grid"></div>
         <button onclick="validateDeck()" id="validate-deck-btn" disabled style="opacity: 0.5; margin-top: 15px;">Valider le Deck</button>
     </div>
 
     <div id="game-container" class="screen hidden">
         <div class="game-info">
-            <div>Tour de : <span id="current-player" style="color: #d4af37; font-weight: bold;">Joueur 1</span></div>
-            <div>PV J1 : <span id="hp-p1" style="color: #ff3d00; font-weight: bold;">10000</span></div>
+            <div>Tour de : <span id="current-player" style="color: #ffd700; font-weight: bold;">Joueur 1</span></div>
+            <div>PV J1 : <span id="hp-p1" style="color: #ff4444; font-weight: bold;">10000</span></div>
             <div>Énergie J1 : <span id="energy-p1">3</span>/10</div>
-            <div>PV J2 : <span id="hp-p2" style="color: #ff3d00; font-weight: bold;">10000</span></div>
+            <div>PV J2 : <span id="hp-p2" style="color: #ff4444; font-weight: bold;">10000</span></div>
             <div>Énergie J2 : <span id="energy-p2">3</span>/10</div>
         </div>
 
@@ -253,7 +369,7 @@
             <div class="player-zone">
                 <h3 id="label-p2">Terrain - Adversaire</h3>
                 <div id="field-p2" class="hand"></div>
-                <h3 id="label-hand-p2">Main - Adversaire <span id="count-p2" style="font-size: 0.8em; color: #555;"></span></h3>
+                <h3 id="label-hand-p2">Main - Adversaire <span id="count-p2" style="font-size: 0.8em; color: #aaa;"></span></h3>
                 <div id="hand-p2" class="hand"></div>
             </div>
             <div class="player-zone">
@@ -266,17 +382,17 @@
 
         <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
             <button onclick="endTurn()">Fin du Tour</button>
-            <span id="battle-status" style="font-size: 0.85em; color: #ffe875;"></span>
+            <span id="battle-status" style="font-size: 0.85em; color: #ffe875; text-shadow: 1px 1px 2px #000;"></span>
         </div>
     </div>
 
     <div id="game-over-overlay" class="hidden">
         <h1 id="game-over-title" style="color: #ff3d00; font-size: 2.5em;">FIN DE PARTIE</h1>
-        <p id="game-over-text" style="font-size: 1.2em; margin-bottom: 20px;"></p>
+        <p id="game-over-text" style="font-size: 1.2em; margin-bottom: 20px; color: #fff;"></p>
         <button class="menu-btn" onclick="location.reload()">Rejouer</button>
     </div>
 
-    <div id="log" class="log">> Bienvenue dans Duel de Cartes. Chaque carte peut attaquer une fois par tour.</div>
+    <div id="log" class="log">> Bienvenue dans Duel de Cartes.</div>
 
     <script>
         const allCards = [
@@ -305,6 +421,36 @@
         };
         let peer = null, conn = null, myPlayerNum = null;
         let selectedAttackerIndex = null;
+
+        function playMusicAndShowMode(mode) {
+            const music = document.getElementById('bg-music');
+            music.play().then(() => {
+                logMessage("Musique lancée.");
+            }).catch(e => {
+                console.log("Erreur lecture audio :", e);
+            });
+            showMode(mode);
+        }
+
+        function triggerCardEffect(element, cost) {
+            if (cost > 5) {
+                element.classList.add('effect-fire');
+                setTimeout(() => {
+                    element.classList.remove('effect-fire');
+                }, 600);
+            }
+        }
+
+        function toggleMusic() {
+            const music = document.getElementById('bg-music');
+            if (music.paused) {
+                music.play();
+                logMessage("Musique activée.");
+            } else {
+                music.pause();
+                logMessage("Musique coupée.");
+            }
+        }
 
         function showMode(mode) {
             if (mode === 'ai') {
@@ -374,7 +520,10 @@
                     <div class="card-title">${card.name}</div>
                     <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
                 `;
-                div.onclick = () => toggleSelectCard(index, div);
+                div.onclick = (e) => {
+                    triggerCardEffect(div, card.cost);
+                    toggleSelectCard(index, div);
+                };
                 grid.appendChild(div);
             });
         }
@@ -500,16 +649,19 @@
                 const div = document.createElement('div');
                 div.className = 'card';
                 if (hidden && !isAI && myPlayerNum !== player) {
-                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#555;">SECRET</div>`;
+                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#aaa;">SECRET</div>`;
                 } else if (isAI && player === 2) {
-                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#555;">IA</div>`;
+                    div.innerHTML = `<div class="card-title" style="text-align:center; margin-top:50px; color:#aaa;">IA</div>`;
                 } else {
                     div.innerHTML = `
                         <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                         <div class="card-title">${card.name}</div>
                         <div class="card-stats">⚡ ${card.cost} | ⚔️ ${card.atk}</div>
                     `;
-                    div.onclick = () => playCard(player, index);
+                    div.onclick = () => {
+                        triggerCardEffect(div, card.cost);
+                        playCard(player, index);
+                    };
                 }
                 handEl.appendChild(div);
             });
@@ -537,7 +689,7 @@
                 } else if (player === activePlayer && canControl && selectedAttackerIndex === index) {
                     div.classList.add('attacker-selected');
                 } else {
-                    div.style.borderColor = (player === 1) ? '#4a90e2' : '#d4af37';
+                    div.style.borderColor = (player === 1) ? '#ffd700' : '#ff8c00';
                 }
 
                 div.innerHTML = `
@@ -547,6 +699,7 @@
                 `;
 
                 div.onclick = () => {
+                    triggerCardEffect(div, card.cost);
                     if (!canControl) return;
 
                     if (player === activePlayer) {
@@ -580,7 +733,7 @@
             state.hand[player].splice(index, 1);
             if (!Array.isArray(state.field[player])) state.field[player] = [];
 
-            card.hasAttacked = true; // Les cartes invoquées ne peuvent pas attaquer le tour où elles sont posées
+            card.hasAttacked = true;
             state.field[player].push(card);
             logMessage(`Joueur ${player} déploie ${card.name} (épuisée ce tour).`);
 
@@ -632,7 +785,6 @@
             state.maxEnergy[state.turn] = Math.min(state.maxEnergy[state.turn] + 1, 10);
             state.energy[state.turn] = state.maxEnergy[state.turn];
 
-            // Réinitialiser la capacité d'attaque des cartes du joueur qui commence son tour
             if (Array.isArray(state.field[state.turn])) {
                 state.field[state.turn].forEach(c => c.hasAttacked = false);
             }
@@ -645,7 +797,6 @@
         function aiTurn() {
             logMessage("L'IA réfléchit...");
             setTimeout(() => {
-                // L'IA joue une carte si possible
                 for (let i = 0; i < state.hand[2].length; i++) {
                     let card = state.hand[2][i];
                     if (state.energy[2] >= card.cost) {
@@ -660,7 +811,6 @@
                 }
                 render();
 
-                // L'IA attaque avec ses cartes disponibles
                 setTimeout(() => {
                     if (Array.isArray(state.field[2])) {
                         for (let i = 0; i < state.field[2].length; i++) {
