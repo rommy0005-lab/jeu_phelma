@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duel de Cartes - Concert Death Metal</title>
     <!-- Import d'une police gothique depuis Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
@@ -12,7 +13,7 @@
             color: #f0f0f0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -20,7 +21,7 @@
             box-sizing: border-box;
         }
 
-        /* Fond de concert de death metal bien visible, lumineux et contrasté */
+        /* Fond de concert */
         .hell-background {
             position: fixed;
             top: 0;
@@ -66,20 +67,10 @@
             }
         }
 
-        /* Animation de flammes permanente pour les gros titres */
         @keyframes textFlame {
-            0% {
-                color: #000000;
-                text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9);
-            }
-            50% {
-                color: #000000;
-                text-shadow: 0 0 15px #ffea00, 0 0 25px #ff3d00, 0 0 40px #ff2200, 2px 2px 4px rgba(0,0,0,0.9);
-            }
-            100% {
-                color: #000000;
-                text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9);
-            }
+            0% { color: #000000; text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9); }
+            50% { color: #000000; text-shadow: 0 0 15px #ffea00, 0 0 25px #ff3d00, 0 0 40px #ff2200, 2px 2px 4px rgba(0,0,0,0.9); }
+            100% { color: #000000; text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9); }
         }
 
         .card.effect-fire {
@@ -87,14 +78,14 @@
             border-color: #ff3d00 !important;
         }
 
-        /* Application de la police gothique, des flammes et du texte en noir sur les grands titres */
         h1, h2 {
             font-family: 'UnifrakturMaguntia', cursive;
             letter-spacing: 2px;
-            font-size: 2.8em;
+            font-size: clamp(1.8em, 5vw, 2.8em);
             animation: textFlame 3s infinite ease-in-out alternate;
             text-align: center;
             color: #000000 !important;
+            margin: 10px 0;
         }
 
         .screen {
@@ -106,38 +97,30 @@
         }
         .hidden { display: none !important; }
 
-        #home-screen {
-            background: rgba(20, 10, 10, 0.65);
+        #home-screen, #deck-builder {
+            background: rgba(20, 10, 10, 0.75);
             border: 2px solid #ffd700;
-            padding: 40px;
+            padding: 20px;
             border-radius: 15px;
-            margin-top: 50px;
+            margin-top: 10px;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
             text-align: center;
             backdrop-filter: blur(4px);
-        }
-
-        #deck-builder {
-            background: rgba(20, 10, 10, 0.65);
-            border: 2px solid #ffd700;
-            padding: 30px;
-            border-radius: 15px;
-            margin-top: 20px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(4px);
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .menu-btn {
             background: linear-gradient(135deg, #ffd700, #ff8c00);
             color: #000000;
             border: none;
-            padding: 15px 30px;
-            font-size: 1.1em;
+            padding: 12px 20px;
+            font-size: clamp(0.9em, 3vw, 1.1em);
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            margin: 10px;
+            margin: 5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.6);
         }
         .menu-btn:hover {
@@ -148,7 +131,7 @@
         .net-box {
             background: rgba(25, 12, 12, 0.75);
             border: 1px solid #ff8c00;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             margin-top: 15px;
             width: 100%;
@@ -160,84 +143,98 @@
         }
 
         .game-info {
-            background: rgba(20, 10, 10, 0.7);
-            padding: 10px 20px;
+            background: rgba(20, 10, 10, 0.85);
+            padding: 10px;
             border-radius: 8px;
             border: 1px solid #ff8c00;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
-            gap: 20px;
-            font-size: 0.85em;
+            gap: 10px 15px;
+            font-size: clamp(0.75em, 2.5vw, 0.9em);
             width: 100%;
             box-sizing: border-box;
-            justify-content: center;
+            justify-content: space-around;
             flex-wrap: wrap;
             backdrop-filter: blur(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
+
         .board {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
             width: 100%;
         }
+
         .player-zone {
             background: rgba(20, 10, 10, 0.65);
             border: 2px dashed rgba(255, 140, 0, 0.6);
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
-            min-height: 200px;
+            min-height: 140px;
             position: relative;
             backdrop-filter: blur(4px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
-        .player-zone h3 { margin: 0 0 8px 0; color: #ffaa44; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; text-shadow: 1px 1px 2px #000; }
+
+        .player-zone h3 {
+            margin: 0 0 5px 0;
+            color: #ffaa44;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
         .hand {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             overflow-x: auto;
             padding: 5px 0;
-            min-height: 190px;
+            min-height: 130px;
+            align-items: center;
+            -webkit-overflow-scrolling: touch;
         }
+
         .card {
             background: linear-gradient(135deg, rgba(40, 20, 20, 0.9) 0%, rgba(15, 8, 8, 0.9) 100%);
             border: 2px solid #ffd700;
-            border-radius: 10px;
-            width: 130px;
-            padding: 6px;
+            border-radius: 8px;
+            width: clamp(90px, 22vw, 120px);
+            padding: 4px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.8);
-            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            transition: transform 0.2s, border-color 0.2s;
             flex-shrink: 0;
             position: relative;
             backdrop-filter: blur(4px);
+            box-sizing: border-box;
         }
+
         .card:hover {
-            transform: translateY(-8px) scale(1.03);
+            transform: translateY(-5px);
             border-color: #ffaa00;
-            box-shadow: 0 0 20px rgba(255,170,0,0.7);
         }
-        .card.selected {
+
+        .card.selected, .card.attacker-selected {
             border-color: #ff3d00;
-            box-shadow: 0 0 20px rgba(255,61,0, 0.9);
-        }
-        .card.attacker-selected {
-            border-color: #ff3d00;
-            box-shadow: 0 0 20px rgba(255,61,0, 0.95);
+            box-shadow: 0 0 15px rgba(255,61,0, 0.9);
             transform: translateY(-5px);
         }
+
         .card.has-attacked {
             opacity: 0.5;
             filter: grayscale(60%);
             cursor: not-allowed;
         }
+
         .card-img-container {
             width: 100%;
-            height: 130px;
-            border-radius: 6px;
+            height: clamp(80px, 18vw, 110px);
+            border-radius: 4px;
             overflow: hidden;
             border: 1px solid #444;
             background: #000;
@@ -245,20 +242,23 @@
             align-items: center;
             justify-content: center;
         }
+
         .card-img-container img { width: 100%; height: 100%; object-fit: contain; }
+
         .card-title {
             font-weight: bold;
-            font-size: 0.7em;
+            font-size: clamp(0.6em, 1.8vw, 0.7em);
             color: #ffd700;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 4px;
+            margin-top: 3px;
             text-shadow: 1px 1px 2px #000;
         }
+
         .card-stats {
-            font-size: 0.65em;
+            font-size: clamp(0.55em, 1.5vw, 0.65em);
             margin: 2px 0;
             background: rgba(0,0,0,0.75);
             padding: 2px;
@@ -267,41 +267,54 @@
             color: #ffaa44;
             font-family: monospace;
         }
+
         .deck-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
             justify-content: center;
             margin: 15px 0;
+            max-height: 60vh;
+            overflow-y: auto;
         }
+
         .log {
-            margin-top: 15px;
+            margin-top: 10px;
             background: rgba(20, 10, 10, 0.75);
             border: 1px solid #ff8c00;
-            padding: 10px;
+            padding: 8px;
             width: 100%;
             max-width: 950px;
             border-radius: 6px;
-            font-size: 0.8em;
-            height: 55px;
+            font-size: clamp(0.7em, 2vw, 0.8em);
+            height: 50px;
             overflow-y: auto;
             color: #ffd;
             font-family: monospace;
             box-sizing: border-box;
             backdrop-filter: blur(4px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
+
         button, input {
             background: linear-gradient(135deg, #ffd700, #ff8c00);
             color: #000000;
             border: none;
-            padding: 8px 15px;
+            padding: 8px 12px;
+            font-size: clamp(0.8em, 2.5vw, 0.9em);
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
         }
-        input { background: rgba(30,15,15,0.9); color: #fff; border: 1px solid #ff8c00; }
+
+        input {
+            background: rgba(30,15,15,0.9);
+            color: #fff;
+            border: 1px solid #ff8c00;
+            width: 100%;
+            max-width: 200px;
+            box-sizing: border-box;
+        }
 
         #game-over-overlay {
             position: fixed;
@@ -313,15 +326,22 @@
             align-items: center;
             z-index: 100;
             backdrop-filter: blur(6px);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 5px; }
+            .player-zone { padding: 5px; min-height: 120px; }
+            .hand { min-height: 110px; }
+            .net-box div { display: flex; flex-direction: column; align-items: center; gap: 5px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Fond de concert de death metal bien visible -->
     <div class="hell-background"></div>
 
-    <!-- Musique de fond -->
     <audio id="bg-music" loop>
         <source src="Soul Evisceration.mp3" type="audio/mpeg">
     </audio>
