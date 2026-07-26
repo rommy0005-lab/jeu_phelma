@@ -258,6 +258,11 @@
             filter: grayscale(60%);
         }
 
+        .card.locomotion-target {
+            border-color: #00ffff !important;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.9);
+        }
+
         .card-img-container {
             width: 100%;
             height: clamp(75px, 16vw, 100px);
@@ -629,7 +634,8 @@
             hand: { 1: [], 2: [] },
             field: { 1: [], 2: [] },
             ground: [],
-            activeTerrain: null
+            activeTerrain: null,
+            locomotionTarget: null // Stocke { player, index } de la carte ciblée par tour pour le terrain Moyen de Locomotion
         };
         let peer = null, conn = null, myPlayerNum = null;
         let selectedAttackerIndex = null;
@@ -643,7 +649,7 @@
 
             const music = document.getElementById('bg-music');
             if (terrainName === "Moyen de Locomotion") {
-                music.src = "terrainlocomotion.mp4"; // Ou autre ressource spécifique si besoin
+                music.src = "terrainlocomotion.mp4";
             } else {
                 music.src = "terrainglissant.mp4";
             }
@@ -772,9 +778,9 @@
             card.evolutions = card.evolutions.slice(1);
 
             if (card.name === "Hom Moustache Commune Îles de France") {
-                activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué.");
+                activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué (sauf pour 1 seule carte ciblée par tour).");
                 card.effectCancelledTurns = 1;
-                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et annule les effets de toutes les cartes pendant 1 tour !");
+                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour !");
             }
 
             logMessage(`✨ ÉVOLUTION MANUELLE ! La carte devient : ${card.name} !`);
@@ -790,9 +796,21 @@
                 return logMessage("Ce n'est pas ton tour d'activer un effet !");
             }
 
-            // Vérifier si les effets sont annulés (ex: par l'effet de l'Hom Moustache)
+            // Vérification de la règle du terrain "Moyen de Locomotion" : n'affecte / ne s'active que pour 1 seule carte ciblée par tour
             if (state.activeTerrain && state.activeTerrain.name === "Moyen de Locomotion" && card.name !== "Hom Moustache Commune Îles de France") {
-                return logMessage("🚫 Les effets de toutes les cartes sont annulés ce tour-ci par le terrain Moyen de Locomotion !");
+                if (!state.locomotionTarget) {
+                    let chooseTarget = confirm(`Le terrain Moyen de Locomotion est actif. Veux-tu cibler ${card.name} pour que ses effets s'activent (1 seule carte par tour) ?`);
+                    if (chooseTarget) {
+                        state.locomotionTarget = { player: playerNum, index: cardIndex };
+                        logMessage(`🎯 ${card.name} est la carte désignée pour s'activer sous le terrain de locomotion ce tour-ci[cite: 1].`);
+                    } else {
+                        return logMessage("🚫 Action annulée : aucune carte ciblée pour contourner l'effet du terrain ce tour-ci.");
+                    }
+                } else {
+                    if (state.locomotionTarget.player !== playerNum || state.locomotionTarget.index !== cardIndex) {
+                        return logMessage("🚫 Les effets de cette carte sont annulés : une autre carte a déjà été ciblée pour ce tour par le terrain de locomotion[cite: 1] !");
+                    }
+                }
             }
 
             logMessage(`Activation de l'effet de : ${card.name}`);
@@ -1278,6 +1296,11 @@
                     div.style.borderColor = (player === 1) ? '#ffd700' : '#ff8c00';
                 }
 
+                // Surlignage visuel si c'est la carte ciblée par le terrain de locomotion ce tour-ci
+                if (state.locomotionTarget && state.locomotionTarget.player === player && state.locomotionTarget.index === index) {
+                    div.classList.add('locomotion-target');
+                }
+
                 let effectiveAtk = getCardEffectiveAtk(card, player);
                 let effectiveDef = getCardEffectiveDef(card, player);
                 let showEvolveBtn = canCardEvolve(card, player) && card.evolutions && card.evolutions.length > 0;
@@ -1393,7 +1416,7 @@
                     desc: "Bus surpuissant invoqué après la mort de l'Homme Bus."
                 };
                 state.field[player].push(busCard);
-                logMessage("🚌 L'Homme Bus Île de France invoque un Bus (2000 ATK / 2000 DEF) sur le terrain ![cite: 1]");
+                logMessage("🚌 L'Homme Bus Île de France invoque un Bus (2000 ATK / 2000 DEF) sur le terrain[cite: 1].");
 
                 card.turnsInGroundDead = 0;
                 card.owner = player;
@@ -1492,6 +1515,7 @@
             state.energy[state.turn] = state.maxEnergy[state.turn];
 
             state.romoloEffectUsedThisTurn = false;
+            state.locomotionTarget = null; // Réinitialisation de la cible unique du terrain de locomotion pour le nouveau tour[cite: 1]
 
             if (Array.isArray(state.ground)) {
                 for (let idx = state.ground.length - 1; idx >= 0; idx--) {
@@ -1517,10 +1541,9 @@
                             if (!Array.isArray(state.field[owner])) state.field[owner] = [];
                             state.field[owner].push(card);
 
-                            // Active automatiquement le terrain "Moyen de Locomotion" lors de son invocation automatique depuis le cimetière
-                            activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué[cite: 1].");
+                            activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué (sauf pour 1 seule carte ciblée par tour)[cite: 1].");
 
-                            logMessage(`🚌 2 tours écoulés : 'Hom Moustache Commune Îles-de-France' est automatiquement invoqué sur le terrain du Joueur ${owner} ![cite: 1]`);
+                            logMessage(`🚌 2 tours écoulés : 'Hom Moustache Commune Îles-de-France' est automatiquement invoqué sur le terrain du Joueur ${owner}[cite: 1] !`);
                         }
                     }
                 }
