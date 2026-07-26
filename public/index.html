@@ -606,7 +606,7 @@
 
     <!-- Overlay vidéo pour la Spé de Chuck Schuldiner -->
     <div id="chuck-video-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 200; display: flex; justify-content: center; align-items: center;">
-        <video id="chuck-vid" src="chuck.mp4" style="max-width: 80%; max-height: 80%; border: 3px solid #ff3d00; border-radius: 10px;"></video>
+        <video id="chuck-vid" src="chuck.mp4" preload="auto" playsinline webkit-playsinline style="max-width: 80%; max-height: 80%; border: 3px solid #ff3d00; border-radius: 10px; transform: translateZ(0); will-change: transform;"></video>
     </div>
 
     <!-- Journal des actions textuel -->
@@ -910,7 +910,12 @@
 
                 videoOverlay.classList.remove('hidden');
                 chuckVideo.currentTime = 0;
-                chuckVideo.play().catch(e => console.log("Erreur lecture vidéo Chuck :", e));
+                chuckVideo.load(); // Force le rechargement pour fluidifier la lecture
+
+                chuckVideo.play().then(() => {
+                    // Accélération matérielle forcée au démarrage effectif
+                    chuckVideo.style.transform = 'translateZ(0)';
+                }).catch(e => console.log("Erreur lecture vidéo Chuck :", e));
 
                 chuckVideo.onended = () => {
                     videoOverlay.classList.add('hidden');
