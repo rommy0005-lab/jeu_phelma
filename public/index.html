@@ -670,7 +670,7 @@
             },
             {name: "Sfax", atk: 0, def: 0, cost: 3, stage: 1, image: "cartes/sfax.jpeg", desc: "Active immédiatement le terrain de Sfax. Si cette carte est détruite, panne d'éléctricité et l'adversaire doit sauter son prochain tour",
     evolutions: []
-},          {name: "Chuck Schuldiner", atk: 3333, def: 5400, cost: 8, stage: 1, image: "cartes/chuck.png", desc: "Active le compteur de attaque finale : spiritual healing, à chaque fois que chuck attaque une carte adverse il gagne +1 a son compteur, si un effet terrain ou carte est activé il gagne +1 aussi, chuck peut lancer une attaque finale qui attaque attaque directement l'adversaire en lui infligeant 2000 degat par compteur accumulé moins l'attaque sommé de toutes les cartes sur le terrain adverse. L'attaque finale peut etre lancée si la puissance de l'attaque finale depasse la somme des attaque des cartes adverses. ",
+},          {name: "Chuck Schuldiner", atk: 3333, def: 5400, cost: 8, stage: 1, image: "cartes/chuck.png", desc: "Active le compteur de attaque finale : spiritual healing, à chaque fois que chuck attaque une carte adverse il gagne +1 a son compteur, si un effet terrain ou carte est activé il gagne +1 aussi, chuck peut lancer une attaque finale qui attaque attaque directement l'adversaire en lui infligeant 1500 degat par compteur accumulé moins l'attaque sommé de toutes les cartes sur le terrain adverse. L'attaque finale peut etre lancée si la puissance de l'attaque finale depasse la somme des attaque des cartes adverses. ",
     evolutions: []}
         ];
 
@@ -1235,7 +1235,7 @@
             let extraInfo = "";
             if (card.name === "Chuck Schuldiner") {
                 let count = card.spiritualHealingCount || 0;
-                let spPower = count * 3500;
+                let spPower = count * 1500;
                 extraInfo = ` | Compteur Spiritual Healing : ${count} (Puissance : ${spPower})`;
             }
 
@@ -1474,7 +1474,7 @@
                 let chuckSpecialInfo = "";
                 if (card.name === "Chuck Schuldiner") {
                     let count = card.spiritualHealingCount || 0;
-                    let spPower = count * 3500;
+                    let spPower = count * 1500;
                     let opponentNum = player === 1 ? 2 : 1;
                     let totalOpponentAtk = 0;
                     if (state.field[opponentNum] && state.field[opponentNum].length > 0) {
