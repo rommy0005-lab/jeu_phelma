@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Duel de Cartes - Concert Death Metal</title>
-    <!-- Import d'une police gothique depuis Google Fonts -->
+    <!-- Import d'une police gothique depuis Google Fonts pour les titres -->
     <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+    <!-- Import de la bibliothèque PeerJS pour la gestion du mode multijoueur P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
+        /* Styles globaux de la page (fond sombre, centrage, police par défaut) */
         body {
             background-color: #1a0808;
             color: #f0f0f0;
@@ -21,7 +23,7 @@
             box-sizing: border-box;
         }
 
-        /* Style pour le symbole féminin en rose et plus grand */
+        /* Style pour mettre en valeur le symbole féminin (rose et ajusté) */
         .female-symbol {
             color: #ff69b4;
             font-size: 1.3em;
@@ -30,22 +32,23 @@
             vertical-align: middle;
         }
 
-        /* Fond de concert dynamique placé au premier plan avec transparence */
+        /* Arrière-plan de concert dynamique fixe au premier plan avec transparence */
         .hell-background {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: 50; /* Au-dessus des éléments de jeu normaux */
-            pointer-events: none; /* Laisse passer les clics pour pouvoir jouer à travers */
+            z-index: 50; /* Place l'arrière-plan au-dessus des éléments normaux */
+            pointer-events: none; /* Laisse passer les clics de souris à travers pour pouvoir jouer */
             overflow: hidden;
             background: url('concert-death.jpg') no-repeat center center fixed;
             background-size: cover;
-            opacity: 0.25; /* Ajuste la visibilité ici (entre 0.1 et 1) */
+            opacity: 0.25; /* Opacité de base pour ne pas gêner la lisibilité */
             transition: background-image 0.5s ease-in-out, opacity 0.5s ease-in-out;
         }
 
+        /* Effet de pulsation lumineuse par-dessus l'arrière-plan */
         .hell-background::after {
             content: "";
             position: absolute;
@@ -54,12 +57,14 @@
             animation: concertPulse 6s infinite ease-in-out alternate;
         }
 
+        /* Animation CSS pour faire pulser la luminosité du concert */
         @keyframes concertPulse {
             0% { opacity: 0.5; }
             50% { opacity: 0.8; }
             100% { opacity: 0.6; }
         }
 
+        /* Animation de feu appliquée lorsqu'une carte coûteuse est cliquée/activée */
         @keyframes clickFire {
             0% {
                 box-shadow: 0 0 15px #ff3d00, 0 0 30px #ffea00, inset 0 0 15px rgba(255, 61, 0, 0.8);
@@ -78,17 +83,20 @@
             }
         }
 
+        /* Animation de flamme textuelle pour les grands titres */
         @keyframes textFlame {
             0% { color: #000000; text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9); }
             50% { color: #000000; text-shadow: 0 0 15px #ffea00, 0 0 25px #ff3d00, 0 0 40px #ff2200, 2px 2px 4px rgba(0,0,0,0.9); }
             100% { color: #000000; text-shadow: 0 0 10px #ff3d00, 0 0 20px #ff6600, 0 0 30px #ff0000, 2px 2px 4px rgba(0,0,0,0.9); }
         }
 
+        /* Classe utilitaire pour déclencher l'effet de feu sur une carte */
         .card.effect-fire {
             animation: clickFire 0.6s ease-in-out;
             border-color: #ff3d00 !important;
         }
 
+        /* Style des titres principaux (H1, H2) avec la police gothique et l'animation de flamme */
         h1, h2 {
             font-family: 'UnifrakturMaguntia', cursive;
             letter-spacing: 2px;
@@ -99,6 +107,7 @@
             margin: 10px 0;
         }
 
+        /* Conteneur principal des écrans du jeu */
         .screen {
             display: flex;
             flex-direction: column;
@@ -108,8 +117,10 @@
             z-index: 60;
             position: relative;
         }
+        /* Classe pour masquer des éléments */
         .hidden { display: none !important; }
 
+        /* Style de l'écran d'accueil et du constructeur de deck */
         #home-screen, #deck-builder {
             background: rgba(20, 10, 10, 0.75);
             border: 2px solid #ffd700;
@@ -123,6 +134,7 @@
             box-sizing: border-box;
         }
 
+        /* Style général des boutons de menu */
         .menu-btn {
             background: linear-gradient(135deg, #ffd700, #ff8c00);
             color: #000000;
@@ -141,6 +153,7 @@
             box-shadow: 0 0 20px rgba(255, 140, 0, 0.9);
         }
 
+        /* Boîte de configuration réseau (multijoueur) */
         .net-box {
             background: rgba(25, 12, 12, 0.75);
             border: 1px solid #ff8c00;
@@ -155,6 +168,7 @@
             align-items: center;
         }
 
+        /* Barre d'informations de jeu (PV, Énergie, Tour actuel) */
         .game-info {
             background: rgba(20, 10, 10, 0.85);
             padding: 10px;
@@ -172,6 +186,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }
 
+        /* Bannière affichant le terrain actif en jeu */
         .field-zone-banner {
             background: rgba(40, 15, 5, 0.85);
             border: 2px solid #ff3d00;
@@ -187,6 +202,7 @@
             box-shadow: 0 0 15px rgba(255, 61, 0, 0.4);
         }
 
+        /* Conteneur principal du plateau de jeu */
         .board {
             display: flex;
             flex-direction: column;
@@ -194,6 +210,7 @@
             width: 100%;
         }
 
+        /* Zone d'un joueur (terrain et main) */
         .player-zone {
             background: rgba(20, 10, 10, 0.65);
             border: 2px dashed rgba(255, 140, 0, 0.6);
@@ -214,6 +231,7 @@
             text-shadow: 1px 1px 2px #000;
         }
 
+        /* Conteneur défilant horizontalement pour la main ou le terrain */
         .hand {
             display: flex;
             gap: 8px;
@@ -224,6 +242,7 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        /* Style visuel d'une carte individuelle */
         .card {
             background: linear-gradient(135deg, rgba(40, 20, 20, 0.9) 0%, rgba(15, 8, 8, 0.9) 100%);
             border: 2px solid #ffd700;
@@ -247,6 +266,7 @@
             border-color: #ffaa00;
         }
 
+        /* États spécifiques d'une carte : sélectionnée, attaquante, grisée (ayant déjà attaqué), ou ciblée par le terrain */
         .card.selected, .card.attacker-selected {
             border-color: #ff3d00;
             box-shadow: 0 0 15px rgba(255,61,0, 0.9);
@@ -263,6 +283,7 @@
             box-shadow: 0 0 15px rgba(0, 255, 255, 0.9);
         }
 
+        /* Conteneur de l'image de la carte */
         .card-img-container {
             width: 100%;
             height: clamp(75px, 16vw, 100px);
@@ -277,6 +298,7 @@
 
         .card-img-container img { width: 100%; height: 100%; object-fit: contain; }
 
+        /* Nom affiché sur la carte */
         .card-title {
             font-weight: bold;
             font-size: clamp(0.6em, 1.8vw, 0.7em);
@@ -289,6 +311,7 @@
             text-shadow: 1px 1px 2px #000;
         }
 
+        /* Statistiques de la carte (Attaque, Défense, Coût) */
         .card-stats {
             font-size: clamp(0.55em, 1.5vw, 0.65em);
             margin: 2px 0;
@@ -300,6 +323,7 @@
             font-family: monospace;
         }
 
+        /* Bouton d'effet ou d'évolution intégré sur la carte en jeu */
         .effect-btn {
             background: #e74c3c;
             color: white;
@@ -317,6 +341,7 @@
             background: #c0392b;
         }
 
+        /* Grille de sélection des cartes dans le constructeur de deck */
         .deck-grid {
             display: flex;
             flex-wrap: wrap;
@@ -373,6 +398,7 @@
             flex-shrink: 0;
         }
 
+        /* Panneau d'inspection d'une carte sélectionnée en jeu */
         #game-inspect-panel {
             background: rgba(25, 12, 12, 0.85);
             border: 1px solid #ff8c00;
@@ -397,6 +423,7 @@
             border: 1px solid #ffd700;
         }
 
+        /* Zone de journal/logs des actions en bas de page */
         .log {
             margin-top: 10px;
             background: rgba(20, 10, 10, 0.75);
@@ -437,6 +464,7 @@
             box-sizing: border-box;
         }
 
+        /* Écran de fin de partie (overlay recouvrant l'écran) */
         #game-over-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -451,6 +479,7 @@
             box-sizing: border-box;
         }
 
+        /* Ajustements pour les petits écrans (mobiles) */
         @media (max-width: 600px) {
             body { padding: 5px; }
             .player-zone { padding: 5px; min-height: 120px; }
@@ -461,16 +490,20 @@
 </head>
 <body>
 
+    <!-- Arrière-plan dynamique visuel -->
     <div class="hell-background" id="game-bg"></div>
 
+    <!-- Élément audio de fond en boucle -->
     <audio id="bg-music" loop>
         <source src="Soul Evisceration.mp3" type="audio/mpeg">
     </audio>
 
+    <!-- Bouton flottant pour couper/activer la musique -->
     <div style="position: fixed; bottom: 15px; right: 15px; z-index: 1000;">
         <button onclick="toggleMusic()" style="background: rgba(30,15,15,0.85); border: 2px solid #ffd700; color: #ffd700; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; backdrop-filter: blur(4px);">🎵 Musique</button>
     </div>
 
+    <!-- Écran d'accueil principal -->
     <div id="home-screen" class="screen">
         <h1>DUEL DE CARTES</h1>
         <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Choisis ton mode de jeu pour commencer.</p>
@@ -479,6 +512,7 @@
             <button class="menu-btn" onclick="playMusicAndShowMode('multi')">Mode Multijoueur</button>
         </div>
 
+        <!-- Panneau de configuration du mode multijoueur -->
         <div id="multi-panel" class="net-box hidden">
             <h3>Configuration En Ligne</h3>
             <div>Mon ID : <span id="my-id" style="color: #ffaa44; font-weight: bold;">Génération...</span></div>
@@ -490,6 +524,7 @@
         </div>
     </div>
 
+    <!-- Écran de création / sélection du deck de départ -->
     <div id="deck-builder" class="screen hidden">
         <h2>Création de ton Deck</h2>
         <p style="color: #ffd; text-shadow: 1px 1px 2px #000;">Sélectionne tes cartes de départ (Stage 1 uniquement) — (<span id="selected-count">0</span> / 6)</p>
@@ -507,7 +542,9 @@
         <button onclick="validateDeck()" id="validate-deck-btn" disabled style="opacity: 0.5; margin-top: 15px;">Valider le Deck</button>
     </div>
 
+    <!-- Écran principal du jeu de cartes -->
     <div id="game-container" class="screen hidden">
+        <!-- Informations globales de la partie (PV, Énergie des deux joueurs) -->
         <div class="game-info">
             <div>Tour de : <span id="current-player" style="color: #ffd700; font-weight: bold;">Joueur 1</span></div>
             <div>PV J1 : <span id="hp-p1" style="color: #ff4444; font-weight: bold;">10000</span></div>
@@ -522,7 +559,7 @@
             <div id="active-terrain-desc" style="font-size: 0.8em; color: #aaa; font-style: italic;">Le fond du jeu s'adaptera selon le terrain en jeu.</div>
         </div>
 
-        <!-- Panneau d'effet actif en jeu -->
+        <!-- Panneau d'inspection d'une carte en jeu -->
         <div id="game-inspect-panel">
             <div id="inspect-img-container"><img id="inspect-img" src="cartes/33590.png" alt="Carte"></div>
             <div style="flex: 1;">
@@ -531,12 +568,13 @@
             </div>
         </div>
 
-        <!-- Zone Par terre (Cartes détruites) -->
+        <!-- Zone "Par terre" (cimetière des cartes détruites) -->
         <div class="player-zone" style="margin-bottom: 10px; min-height: 100px; border-color: rgba(255, 61, 0, 0.7); background: rgba(30, 10, 10, 0.75);">
             <h3>Par terre (Cartes détruites)</h3>
             <div id="ground-cards" class="hand"></div>
         </div>
 
+        <!-- Plateau de jeu : terrains et mains des joueurs -->
         <div class="board">
             <div class="player-zone">
                 <h3 id="label-p2">Terrain - Adversaire</h3>
@@ -552,21 +590,25 @@
             </div>
         </div>
 
+        <!-- Contrôles du tour -->
         <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
             <button onclick="endTurn()">Fin du Tour</button>
             <span id="battle-status" style="font-size: 0.85em; color: #ffe875; text-shadow: 1px 1px 2px #000;"></span>
         </div>
     </div>
 
+    <!-- Overlay de fin de partie -->
     <div id="game-over-overlay" class="hidden">
         <h1 id="game-over-title" style="color: #ff3d00; font-size: 2.5em;">FIN DE PARTIE</h1>
         <p id="game-over-text" style="font-size: 1.2em; margin-bottom: 20px; color: #fff;"></p>
         <button class="menu-btn" onclick="location.reload()">Rejouer</button>
     </div>
 
+    <!-- Journal des actions textuel -->
     <div id="log" class="log">> Bienvenue dans Duel de Cartes.</div>
 
     <script>
+        /* Base de données complète de toutes les cartes disponibles dans le jeu avec leurs stats, coûts, images, descriptions et évolutions */
         const allCards = [
             {
                 name: "Romolo", atk: 700, def: 1800, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +500 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
@@ -620,9 +662,14 @@
             {
                 name: "Hom Moustache Commune Îles de France", atk: 100, def: 2400, cost: 2, stage: 2, image: "cartes/33637.png", desc: "Évolution moustache conférant une excellente protection.",
                 evolutions: []
-            }
+            },
+            {name: "Sfax", atk: 0, def: 0, cost: 3, stage: 1, image: "cartes/sfax.jpeg", desc: "Active immédiatement le terrain de Sfax. Si cette carte est détruite, panne d'éléctricité et l'adversaire doit sauter son prochain tour",
+    evolutions: []
+},          {name: "Chuck Schuldiner", atk: 3333, def: 5400, cost: 8, stage: 1, image: "cartes/chuck.png", desc: "Active le compteur de attaque finale : spiritual healing, à chaque fois que chuck attaque une carte adverse il gagne +1 a son compteur, si un effet terrain ou carte est activé il gagne +1 aussi, chuck peut lancer une attaque finale qui attaque attaque directement l'adversaire en lui infligeant 500 degat par compteur accumulé moins l'attaque sommé de toutes les cartes sur le terrain adverse. L'attaque finale peut etre lancée si la puissance de l'attaque finale depasse la somme des attaque des cartes adverses. ",
+    evolutions: []}
         ];
 
+        /* Variables d'état global du jeu */
         let isAI = false;
         let selectedDeckIndices = [];
         let playerDecks = { 1: [], 2: [] };
@@ -640,6 +687,7 @@
         let peer = null, conn = null, myPlayerNum = null;
         let selectedAttackerIndex = null;
 
+        /* Fonction d'activation d'un terrain (change la musique, l'arrière-plan, et gère les déclenchements de bus) */
         function activateTerrain(terrainName, terrainImage, terrainDesc) {
             state.activeTerrain = {
                 name: terrainName,
@@ -657,14 +705,14 @@
 
             logMessage(`🌍 TERRAIN ACTIVÉ : ${terrainName} !`);
 
-            // Logique spécifique : Si un terrain active son effet, invoque un bus (pour Hom Moustache)
+            /* Logique spécifique : Si un terrain active son effet, invoque un bus pour l'Hom Moustache */
             [1, 2].forEach(p => {
                 if (Array.isArray(state.field[p])) {
                     state.field[p].forEach(c => {
                         if (c.name === "Hom Moustache Commune Îles de France") {
                             let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué par l'effet terrain." };
                             state.field[p].push(busCard);
-                            logMessage(`🚌 L'effet terrain active le pouvoir de l'Hom Moustache : un bus est invoqué sur le terrain du Joueur ${p} ![cite: 1]`);
+                            logMessage(`🚌 L'effet terrain active le pouvoir de l'Hom Moustache : un bus est invoqué sur le terrain du Joueur ${p}[cite: 1]!`);
 
                             let busCount = state.field[p].filter(cardItem => cardItem.name.includes("Bus")).length;
                             if (busCount >= 3) {
@@ -672,7 +720,7 @@
                                 let totalDamage = busCount * 1500;
                                 let opponentNum = p === 1 ? 2 : 1;
                                 state.hp[opponentNum] -= totalDamage;
-                                logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés au Joueur ${opponentNum} ![cite: 1]`);
+                                logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés au Joueur ${opponentNum}[cite: 1]!`);
                             }
                         }
                     });
@@ -682,6 +730,7 @@
             updateTerrainDisplay();
         }
 
+        /* Met à jour l'affichage visuel de la bannière du terrain et du fond d'écran */
         function updateTerrainDisplay() {
             const nameEl = document.getElementById('active-terrain-name');
             const descEl = document.getElementById('active-terrain-desc');
@@ -700,6 +749,7 @@
             }
         }
 
+        /* Compte le nombre total de cartes avec l'attribut "femme" sur l'ensemble du terrain */
         function countFemmeOnField() {
             let count = 0;
             [1, 2].forEach(p => {
@@ -712,6 +762,7 @@
             return count;
         }
 
+        /* Calcule l'attaque effective d'une carte en tenant compte des bonus/malus (Romolo, Balayeur, Aura Pablet, etc.) */
         function getCardEffectiveAtk(card, playerNum) {
             let baseAtk = card.atk || 0;
             if (card.name === "Romolo") {
@@ -738,6 +789,7 @@
             return Math.max(0, baseAtk);
         }
 
+        /* Calcule la défense effective d'une carte (prend en compte le malus de glissade, etc.) */
         function getCardEffectiveDef(card, playerNum) {
             let baseDef = card.def || 0;
 
@@ -752,6 +804,7 @@
             return Math.max(0, baseDef);
         }
 
+        /* Vérifie si une carte remplit les conditions pour pouvoir évoluer */
         function canCardEvolve(card, playerNum) {
             let currentAtk = getCardEffectiveAtk(card, playerNum);
 
@@ -764,6 +817,7 @@
             return false;
         }
 
+        /* Déclenche l'évolution manuelle d'une carte sur le terrain */
         function triggerManualEvolution(playerNum, cardIndex) {
             let card = state.field[playerNum][cardIndex];
             if (!card || !card.evolutions || card.evolutions.length === 0) return;
@@ -780,7 +834,7 @@
             if (card.name === "Hom Moustache Commune Îles de France") {
                 activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué (sauf pour 1 seule carte ciblée par tour).");
                 card.effectCancelledTurns = 1;
-                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour ![cite: 1]");
+                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour[cite: 1]!");
             }
 
             logMessage(`✨ ÉVOLUTION MANUELLE ! La carte devient : ${card.name} !`);
@@ -788,6 +842,7 @@
             render();
         }
 
+        /* Exécute l'effet spécial d'une carte spécifique lorsqu'on clique sur son bouton "Effet" */
         function triggerCardEffectAction(playerNum, cardIndex) {
             let card = state.field[playerNum][cardIndex];
             if (!card) return;
@@ -796,7 +851,7 @@
                 return logMessage("Ce n'est pas ton tour d'activer un effet !");
             }
 
-            // Vérification de la règle du terrain "Moyen de Locomotion" : n'affecte / ne s'active que pour 1 seule carte ciblée par tour
+            /* Vérification de la règle du terrain "Moyen de Locomotion" (1 seule carte ciblée par tour) */
             if (state.activeTerrain && state.activeTerrain.name === "Moyen de Locomotion" && card.name !== "Hom Moustache Commune Îles de France") {
                 if (!state.locomotionTarget) {
                     let chooseTarget = confirm(`Le terrain Moyen de Locomotion est actif. Veux-tu cibler ${card.name} pour que ses effets s'activent (1 seule carte par tour) ?`);
@@ -817,12 +872,12 @@
 
             if (card.name === "Hom Moustache Commune Îles de France") {
                 if (card.effectUsedThisTurn) {
-                    return logMessage("L'Hom Moustache a déjà activé son effet ce tour-ci ![cite: 1]");
+                    return logMessage("L'Hom Moustache a déjà activé son effet ce tour-ci[cite: 1] !");
                 }
 
                 let busCard = { name: "Bus 2000", atk: 0, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué." };
                 state.field[playerNum].push(busCard);
-                logMessage("🚌 Un bus supplémentaire a été invoqué sur le terrain par l'effet de l'Hom Moustache ![cite: 1]");
+                logMessage("🚌 Un bus supplémentaire a été invoqué sur le terrain par l'effet de l'Hom Moustache[cite: 1] !");
 
                 let busCount = state.field[playerNum].filter(c => c.name.includes("Bus")).length;
                 if (busCount >= 3) {
@@ -830,7 +885,7 @@
                     let totalDamage = busCount * 750;
                     let opponentNum = playerNum === 1 ? 2 : 1;
                     state.hp[opponentNum] -= totalDamage;
-                    logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés à l'adversaire ![cite: 1]`);
+                    logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés à l'adversaire[cite: 1] !`);
                 }
 
                 card.effectUsedThisTurn = true;
@@ -942,6 +997,7 @@
             render();
         }
 
+        /* Lance la musique et affiche le mode de jeu choisi (solo ou multijoueur) */
         function playMusicAndShowMode(mode) {
             const music = document.getElementById('bg-music');
             music.play().then(() => {
@@ -952,6 +1008,7 @@
             showMode(mode);
         }
 
+        /* Anime visuellement une carte avec un effet de feu si son coût est élevé */
         function triggerCardEffect(element, cost) {
             if (cost > 5) {
                 element.classList.add('effect-fire');
@@ -961,6 +1018,7 @@
             }
         }
 
+        /* Bascule la lecture ou la pause de la musique de fond */
         function toggleMusic() {
             const music = document.getElementById('bg-music');
             if (music.paused) {
@@ -972,6 +1030,7 @@
             }
         }
 
+        /* Gère l'affichage des écrans selon le mode sélectionné */
         function showMode(mode) {
             if (mode === 'ai') {
                 isAI = true;
@@ -988,6 +1047,7 @@
             }
         }
 
+        /* Initialise la connexion PeerJS pour le multijoueur en ligne */
         function initPeer() {
             if (!peer) {
                 peer = new Peer();
@@ -1004,6 +1064,7 @@
             }
         }
 
+        /* Permet à un joueur de se connecter à l'ID PeerJS d'un autre joueur */
         function connectToPeer() {
             const destId = document.getElementById('peer-id-input').value;
             conn = peer.connect(destId);
@@ -1015,6 +1076,7 @@
             initDeckBuilder();
         }
 
+        /* Configure les écouteurs de données pour la synchronisation réseau PeerJS */
         function setupConnection() {
             conn.on('data', (data) => {
                 if (data.type === 'DECK_SELECTION') {
@@ -1029,6 +1091,7 @@
             });
         }
 
+        /* Initialise l'interface du constructeur de deck (affiche les cartes de stade 1) */
         function initDeckBuilder() {
             const grid = document.getElementById('builder-grid');
             grid.innerHTML = '';
@@ -1060,6 +1123,7 @@
             });
         }
 
+        /* Affiche les informations détaillées et les évolutions possibles d'une carte dans le panneau latéral du builder */
         function showEvolutionPreview(card) {
             const container = document.getElementById('evolution-stages-content');
             let isFemme = card.attributes && card.attributes.includes("femme");
@@ -1088,6 +1152,7 @@
             }
         }
 
+        /* Inspecte une carte en cours de partie et met à jour le panneau d'inspection textuel */
         function inspectCardInGame(card, playerNum) {
             document.getElementById('inspect-img').src = card.image;
             let effectiveAtk = playerNum ? getCardEffectiveAtk(card, playerNum) : (card.atk || 0);
@@ -1100,6 +1165,7 @@
             document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}${attrText}`;
         }
 
+        /* Gère la sélection / désélection des cartes lors de la construction du deck (maximum 6 cartes) */
         function toggleSelectCard(index, element, card) {
             showEvolutionPreview(card);
             const pos = selectedDeckIndices.indexOf(index);
@@ -1117,6 +1183,7 @@
             else { btn.disabled = true; btn.style.opacity = '0.5'; }
         }
 
+        /* Valide le deck choisi, génère le deck de l'IA si nécessaire ou envoie le deck au pair distant */
         function validateDeck() {
             const myDeck = selectedDeckIndices.map(i => {
                 let c = JSON.parse(JSON.stringify(allCards[i]));
@@ -1150,6 +1217,7 @@
             }
         }
 
+        /* Vérifie si les deux joueurs ont validé leur deck pour lancer la partie en ligne */
         function checkGameStart() {
             if (playerDecks[1].length > 0 && playerDecks[2].length > 0) {
                 state.hand[1] = playerDecks[1];
@@ -1160,16 +1228,19 @@
             }
         }
 
+        /* Envoie l'état du jeu mis à jour à l'adversaire en mode multijoueur */
         function sendState() {
             if (!isAI && conn && conn.open) conn.send(state);
         }
 
+        /* Ajoute un message textuel dans le journal de bord (log) en bas de l'écran */
         function logMessage(msg) {
             const logEl = document.getElementById('log');
             logEl.innerHTML += `<div>> ${msg}</div>`;
             logEl.scrollTop = logEl.scrollHeight;
         }
 
+        /* Vérifie si l'un des joueurs est tombé à 0 PV ou moins pour déclencher la fin de partie */
         function checkGameOver() {
             if (state.hp[1] <= 0) {
                 triggerGameOver(2);
@@ -1178,6 +1249,7 @@
             }
         }
 
+        /* Affiche l'écran de fin de partie (overlay) avec le nom du vainqueur */
         function triggerGameOver(winner) {
             const overlay = document.getElementById('game-over-overlay');
             const text = document.getElementById('game-over-text');
@@ -1185,6 +1257,7 @@
             overlay.classList.remove('hidden');
         }
 
+        /* Fonction principale de rendu graphique de l'interface de jeu (rafraîchit tous les éléments visuels) */
         function render() {
             document.getElementById('current-player').innerText = `Joueur ${state.turn}`;
             document.getElementById('hp-p1').innerText = state.hp[1];
@@ -1202,6 +1275,7 @@
             checkGameOver();
         }
 
+        /* Affiche les cartes détruites dans la zone "Par terre" (cimetière) */
         function renderGround() {
             const groundEl = document.getElementById('ground-cards');
             if (!groundEl) return;
@@ -1227,6 +1301,7 @@
             });
         }
 
+        /* Met à jour le texte d'instruction concernant les phases d'attaque */
         function updateBattleText() {
             const statusEl = document.getElementById('battle-status');
             const activePlayer = state.turn;
@@ -1240,6 +1315,7 @@
             }
         }
 
+        /* Affiche les cartes présentes dans la main d'un joueur (avec masquage si c'est la main adverse en ligne) */
         function renderHand(player, hidden = false) {
             const handEl = document.getElementById(`hand-p${player}`);
             if (!handEl) return;
@@ -1277,6 +1353,7 @@
             }
         }
 
+        /* Affiche les cartes posées sur le terrain d'un joueur et gère les interactions de combat */
         function renderField(player) {
             const fieldEl = document.getElementById(`field-p${player}`);
             if (!fieldEl) return;
@@ -1302,7 +1379,7 @@
                     div.style.borderColor = (player === 1) ? '#ffd700' : '#ff8c00';
                 }
 
-                // Surlignage visuel si c'est la carte ciblée par le terrain de locomotion ce tour-ci
+                /* Surlignage visuel si c'est la carte ciblée par le terrain de locomotion ce tour-ci */
                 if (state.locomotionTarget && state.locomotionTarget.player === player && state.locomotionTarget.index === index) {
                     div.classList.add('locomotion-target');
                 }
@@ -1349,6 +1426,7 @@
             });
         }
 
+        /* Gère le clic sur un terrain vide pour effectuer une attaque directe sur l'adversaire */
         function handleFieldClick(targetPlayerZone) {
             const activePlayer = state.turn;
             const canControl = isAI ? (activePlayer === 1) : (activePlayer === myPlayerNum);
@@ -1363,6 +1441,7 @@
             }
         }
 
+        /* Résout une attaque directe sur les PV adverses lorsque le terrain d'en face est vide */
         function resolveDirectAttack(attackerIdx) {
             const activePlayer = state.turn;
             const defendingPlayer = activePlayer === 1 ? 2 : 1;
@@ -1401,6 +1480,7 @@
             render();
         }
 
+        /* Permet à un joueur de jouer une carte depuis sa main vers son terrain en dépensant de l'énergie */
         function playCard(player, index) {
             if (!isAI && myPlayerNum && player !== myPlayerNum) return logMessage("Ce n'est pas ta main !");
             if (player !== state.turn) return logMessage("Ce n'est pas ton tour !");
@@ -1444,6 +1524,7 @@
             render();
         }
 
+        /* Résout un combat entre une carte attaquante et une carte défenseuse adverse */
         function resolveCombat(attackerIdx, defenderIdx) {
             const activePlayer = state.turn;
             const defendingPlayer = activePlayer === 1 ? 2 : 1;
@@ -1505,6 +1586,7 @@
             render();
         }
 
+        /* Termine le tour en cours et passe la main à l'autre joueur */
         function endTurn() {
             const activePlayer = state.turn;
             const canControl = isAI ? (activePlayer === 1) : (activePlayer === myPlayerNum);
@@ -1515,6 +1597,7 @@
             if (isAI && state.turn === 2) setTimeout(aiTurn, 800);
         }
 
+        /* Bascule l'état du tour (énergie, réinitialisation des attaques, vérification des délais pour les bus) */
         function switchTurn() {
             state.turn = state.turn === 1 ? 2 : 1;
             state.maxEnergy[state.turn] = Math.min(state.maxEnergy[state.turn] + 1, 10);
@@ -1574,6 +1657,7 @@
             render();
         }
 
+        /* Intelligence Artificielle (IA) simplifiée pour jouer son tour automatiquement en mode solo */
         function aiTurn() {
             logMessage("L'IA réfléchit...");
             setTimeout(() => {
