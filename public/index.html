@@ -563,7 +563,6 @@
 
     <script>
         const allCards = [
-
             {
                 name: "Romolo", atk: 700, def: 1800, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +500 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
                 evolutions: [
@@ -615,10 +614,7 @@
             },
             {
                 name: "Hom Moustache Commune Îles de France", atk: 100, def: 2400, cost: 2, stage: 2, image: "cartes/33637.png", desc: "Évolution moustache conférant une excellente protection.",
-                evolutions: [
-                    { name: "Moustache Impériale", desc: "Défense absolue contre les attaques frontales.", image: "cartes/33637.png", atk: 500, def: 3500 },
-                    { name: "Moustache Légendaire", desc: "Mur infranchissable légendaire.", image: "cartes/33637.png", atk: 1000, def: 5000 }
-                ]
+                evolutions: []
             }
         ];
 
@@ -646,10 +642,37 @@
             };
 
             const music = document.getElementById('bg-music');
-            music.src = "terrainglissant.mp4";
+            if (terrainName === "Moyen de Locomotion") {
+                music.src = "terrainlocomotion.mp4"; // Ou autre ressource spécifique si besoin
+            } else {
+                music.src = "terrainglissant.mp4";
+            }
             music.play().catch(e => console.log("Erreur lecture audio terrain :", e));
 
             logMessage(`🌍 TERRAIN ACTIVÉ : ${terrainName} !`);
+
+            // Logique spécifique : Si un terrain active son effet, invoque un bus (pour Hom Moustache)
+            [1, 2].forEach(p => {
+                if (Array.isArray(state.field[p])) {
+                    state.field[p].forEach(c => {
+                        if (c.name === "Hom Moustache Commune Îles de France") {
+                            let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué par l'effet terrain." };
+                            state.field[p].push(busCard);
+                            logMessage(`🚌 L'effet terrain active le pouvoir de l'Hom Moustache : un bus est invoqué sur le terrain du Joueur ${p} !`);
+
+                            let busCount = state.field[p].filter(cardItem => cardItem.name.includes("Bus")).length;
+                            if (busCount >= 3) {
+                                state.field[p] = state.field[p].filter(cardItem => !cardItem.name.includes("Bus"));
+                                let totalDamage = busCount * 1500;
+                                let opponentNum = p === 1 ? 2 : 1;
+                                state.hp[opponentNum] -= totalDamage;
+                                logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés au Joueur ${opponentNum} !`);
+                            }
+                        }
+                    });
+                }
+            });
+
             updateTerrainDisplay();
         }
 
@@ -731,7 +754,6 @@
             if (card.name === "Carlos Alcaraz" && (card.aceCount || 0) >= 2) return true;
             if (card.name === "Hom Hugo" && (card.effectActivationCount || 0) >= 2) return true;
             if (card.name === "Hom Chasseur de Nain" && (card.attackedCount || 0) >= 2) return true;
-            if (card.name === "Homme Bus Île de France" && (card.turnsOnGround || 0) >= 2) return true;
 
             return false;
         }
@@ -749,6 +771,12 @@
 
             card.evolutions = card.evolutions.slice(1);
 
+            if (card.name === "Hom Moustache Commune Îles de France") {
+                activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué.");
+                card.effectCancelledTurns = 1;
+                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et annule les effets de toutes les cartes pendant 1 tour !");
+            }
+
             logMessage(`✨ ÉVOLUTION MANUELLE ! La carte devient : ${card.name} !`);
             sendState();
             render();
@@ -762,9 +790,28 @@
                 return logMessage("Ce n'est pas ton tour d'activer un effet !");
             }
 
+            // Vérifier si les effets sont annulés (ex: par l'effet de l'Hom Moustache)
+            if (state.activeTerrain && state.activeTerrain.name === "Moyen de Locomotion" && card.name !== "Hom Moustache Commune Îles de France") {
+                return logMessage("🚫 Les effets de toutes les cartes sont annulés ce tour-ci par le terrain Moyen de Locomotion !");
+            }
+
             logMessage(`Activation de l'effet de : ${card.name}`);
 
-            if (card.name === "Romolo") {
+            if (card.name === "Hom Moustache Commune Îles de France") {
+                let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué." };
+                state.field[playerNum].push(busCard);
+                logMessage("🚌 Un bus supplémentaire a été invoqué sur le terrain par l'effet de l'Hom Moustache !");
+
+                let busCount = state.field[playerNum].filter(c => c.name.includes("Bus")).length;
+                if (busCount >= 3) {
+                    state.field[playerNum] = state.field[playerNum].filter(c => !c.name.includes("Bus"));
+                    let totalDamage = busCount * 1500;
+                    let opponentNum = playerNum === 1 ? 2 : 1;
+                    state.hp[opponentNum] -= totalDamage;
+                    logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés à l'adversaire !`);
+                }
+            }
+            else if (card.name === "Romolo") {
                 if (state.romoloEffectUsedThisTurn) {
                     return logMessage("Romolo a déjà utilisé son effet ce tour-ci !");
                 }
@@ -852,7 +899,7 @@
 
                 let hasMohamed = state.field[playerNum].some(c => c.name === "Mohamed Suicmez NECRO");
                 if (!hasMohamed) {
-                    let mohamedCard = { name: "Mohamed Suicmez NECRO", atk: 3000, def: 2500, cost: 4,image: "cartes/mohamedn.jpg", desc: "Invoqué par le Balayeur Ultime." };
+                    let mohamedCard = { name: "Mohamed Suicmez NECRO", atk: 3000, def: 2500, cost: 4, image: "cartes/mohamedn.jpg", desc: "Invoqué par le Balayeur Ultime." };
                     state.field[playerNum].push(mohamedCard);
                     logMessage("Mohamed Suicmez entre sur le terrain !");
                 }
@@ -862,9 +909,6 @@
             }
             else if (card.name === "Hom Hugo") {
                 activateTerrain("Châtelet-les-Halles", "cartes/33631.png", "Le hub labyrinthique de Châtelet-les-Halles modifie l'espace-temps.");
-            }
-            else if (card.name === "Hom Moustache Commune Îles de France") {
-                activateTerrain("Moyen de Locomotion", "cartes/33637.png", "Les transports en commun traversent la carte à pleine vitesse.");
             }
             else {
                 logMessage(`La carte ${card.name} n'a pas d'effet actif spécifique pour le moment.`);
@@ -1298,7 +1342,6 @@
             if (!attacker) return;
             if (attacker.hasAttacked) return logMessage("Cette carte a déjà attaqué ce tour !");
 
-            // Correction : Empêche l'attaque directe uniquement au tout premier tour du tout premier joueur
             if (state.turn === 1 && state.energy[activePlayer] === 3 && state.maxEnergy[activePlayer] === 3) {
                 return logMessage("Impossible d'attaquer directement lors du tout premier tour du jeu !");
             }
@@ -1339,6 +1382,29 @@
             state.energy[player] -= card.cost;
             state.hand[player].splice(index, 1);
             if (!Array.isArray(state.field[player])) state.field[player] = [];
+
+            if (card.name === "Homme Bus Île de France") {
+                let busCard = {
+                    name: "Bus 2000",
+                    atk: 2000,
+                    def: 2000,
+                    cost: 0,
+                    image: "cartes/bus3.jpg",
+                    desc: "Bus surpuissant invoqué après la mort de l'Homme Bus."
+                };
+                state.field[player].push(busCard);
+                logMessage("🚌 L'Homme Bus Île de France invoque un Bus (2000 ATK / 2000 DEF) sur le terrain ![cite: 1]");
+
+                card.turnsInGroundDead = 0;
+                card.owner = player;
+                if (!state.ground) state.ground = [];
+                state.ground.push(card);
+                logMessage("L'Homme Bus Île de France est détruit (envoyé dans la zone Par terre). Son évolution sera automatiquement invoquée dans 2 tours[cite: 1].");
+
+                sendState();
+                render();
+                return;
+            }
 
             card.hasAttacked = true;
             card.turnsOnGround = (card.turnsOnGround || 0) + 1;
@@ -1427,6 +1493,39 @@
 
             state.romoloEffectUsedThisTurn = false;
 
+            if (Array.isArray(state.ground)) {
+                for (let idx = state.ground.length - 1; idx >= 0; idx--) {
+                    let card = state.ground[idx];
+                    if (card.name === "Homme Bus Île de France" || card.originalName === "Homme Bus Île de France") {
+                        card.turnsInGroundDead = (card.turnsInGroundDead || 0) + 1;
+                        if (card.turnsInGroundDead >= 2 && !card.evolutionTriggered) {
+                            card.evolutionTriggered = true;
+                            card.name = "Hom Moustache Commune Îles de France";
+                            card.atk = 100;
+                            card.def = 2400;
+                            card.image = "cartes/33637.png";
+                            card.desc = "Active le terrain : moyen de locomotion, annule les effet de toutes les cartes pendant 1 tour le tour où il est invoqué. Si un terrain active son effet invoque un bus. Au bout de 3 bus sur le terrain, détruit tout les bus et inflige 1500 de degat pour chaque bus détruit[cite: 1].";
+                            card.hasAttacked = false;
+                            card.evolutions = [
+                                { name: "Moustache Impériale", desc: "Défense absolue contre les attaques frontales.", image: "cartes/bus3.jpg", atk: 500, def: 3500 },
+                                { name: "Moustache Légendaire", desc: "Mur infranchissable légendaire.", image: "cartes/bus3.jpg", atk: 1000, def: 5000 }
+                            ];
+
+                            state.ground.splice(idx, 1);
+
+                            let owner = card.owner || state.turn;
+                            if (!Array.isArray(state.field[owner])) state.field[owner] = [];
+                            state.field[owner].push(card);
+
+                            // Active automatiquement le terrain "Moyen de Locomotion" lors de son invocation automatique depuis le cimetière
+                            activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué[cite: 1].");
+
+                            logMessage(`🚌 2 tours écoulés : 'Hom Moustache Commune Îles-de-France' est automatiquement invoqué sur le terrain du Joueur ${owner} ![cite: 1]`);
+                        }
+                    }
+                }
+            }
+
             if (Array.isArray(state.field[state.turn])) {
                 state.field[state.turn].forEach(c => {
                     c.balayeurEffectUsedThisTurn = false;
@@ -1454,6 +1553,18 @@
                         state.energy[2] -= card.cost;
                         state.hand[2].splice(i, 1);
                         if (!Array.isArray(state.field[2])) state.field[2] = [];
+
+                        if (card.name === "Homme Bus Île de France") {
+                            let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus surpuissant invoqué[cite: 1]." };
+                            state.field[2].push(busCard);
+                            card.turnsInGroundDead = 0;
+                            card.owner = 2;
+                            if (!state.ground) state.ground = [];
+                            state.ground.push(card);
+                            logMessage("L'IA déploie et détruit l'Homme Bus Île de France (génère un Bus 2000 ATK/DEF)[cite: 1].");
+                            break;
+                        }
+
                         card.hasAttacked = true;
                         card.turnsOnGround = (card.turnsOnGround || 0) + 1;
                         state.field[2].push(card);
@@ -1509,7 +1620,7 @@
                                     if (aiAtk >= defenderDef) {
                                         let destroyedCard = state.field[1].splice(0, 1)[0];
                                         if (!state.ground) state.ground = [];
-                                        state.ground.push(destroyedCard);
+                                           state.ground.push(destroyedCard);
 
                                         let damage = aiAtk;
                                         state.hp[1] -= damage;
