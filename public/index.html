@@ -555,15 +555,14 @@
             {
                 name: "Romolo", atk: 700, def: 1800, cost: 2, stage: 1, image: "cartes/33590.png", desc: "Peut transformer une carte de l'adversaire en lui attribuant l'attribut Femme (1 fois par tour). +500 d'ATK pour chaque femme sur le terrain. Peut enlever un attribut Femme sur une carte adverse et invoquer André Jawad sur le terrain. Coût énergie : 1 si il y a 2 femme sur le terrain. Évolue en Balayeur de femmes.",
                 evolutions: [
-                    { name: "Balayeur de Femmes", desc: "Invoque la carte terrain Sol glissant. Immunisé contre les effets des cartes terrains. +500 ATK par carte attribut Femme sur le terrain. -500 ATK pour les cartes avec attribut femmes. Perd la possibilité d'attaquer pendant le nombre de tour égale au nombre de cartes auxquelles il a attribué l'attribut femme en 1 tour (max 3 par tour). Évolue en Le Balayeur final lorsque son attaque dépasse 4000.", image: "cartes/33592.png", atk: 2000, def: 2000 },
+                    { name: "Balayeur de Femmes", desc: "Invoque la carte terrain Sol glissant. Immunisé contre les effets des cartes terrains. +500 ATK et +1500 Def par carte attribut Femme sur le terrain. -500 ATK pour les cartes avec attribut femmes. Perd la possibilité d'attaquer pendant le nombre de tour égale au nombre de cartes auxquelles il a attribué l'attribut femme en 1 tour (max 3 par tour). Évolue en Le Balayeur final lorsque son attaque dépasse 4000.", image: "cartes/33592.png", atk: 2000, def: 2000 },
                     { name: "Balayeur Ultime", desc: "Balaye toutes les cartes attribut Femmes sur le terrain, cet effet ne peux pas être contrasté (1 fois par tour). Il invoque Mohamed Suicmez en balayant 1 femme. Une fois par tour, attribu un attribut femme à toutes les cartes sur le terrain. Si une carte est déjà femme, elle se transforme en la carte Terrain : Sol.", image: "cartes/33597.png", atk: 4000, def: 3000 }
                 ]
             },
             {name: "Tails", atk: 2 , def: 1 , cost: 1 , stage : 1, image: "cartes/Tails.jpg", desc: " C'est deja une femme"},
-            {name: "Alex", atk: 1400 , def: 1200 , cost: 2 , stage : 1, image: "cartes/Alex.png", desc: "Invoque claire sur le tarrain, mais comme c'est une femme invoque un homme à la place qui est Nicolas Mattar"},
-            {name: "Moez", atk: 2000 , def: 2000 , cost: 3 , stage : 1, image: "cartes/Moez.jpg", desc: "Une fois par tour il peux balayer une femme sur le terrain "},
-            {name: "André Jawad", atk: 1500, def: 1500, cost: 2, stage: 1, image: "cartes/andre_jawad.png", desc: "Invoqué par l'effet de Romolo."},
-            {name: "Mohamed Suicmez", atk: 1500, def: 2500, cost: 4, stage: 1, image: "cartes/mohamed_suicmez.png", desc: "Invoqué par le Balayeur Ultime."},
+            {name: "Moez", atk: 1700 , def: 2000 , cost: 3 , stage : 1, image: "cartes/Moez.png", desc: "Une fois par tour il peux balayer une femme sur le terrain "},
+            {name: "André Jawad", atk: 1500, def: 1500, cost: 2, stage: 1, image: "cartes/Jawad.png", desc: "Invoqué par l'effet de Romolo."},
+            {name: "Mohamed Suicmez", atk: 1500, def: 2500, cost: 4, stage: 1, image: "cartes/Mohamed.png", desc: "Invoqué par le Balayeur Ultime."},
             {
                 name: "Carlos Alcaraz", atk: 1500, def: 1600, cost: 3, stage: 1, image: "cartes/Carlos 1.png", desc: "Une fois par tour peux sauver une carte de la destruction en opérant un ace. Au bout de 2 ace Evolue en la carte : Omar Hachicha",
                 evolutions: [{name: "Omar Hachicha", atk: 4000, def: 3800, stage : 2, image: "cartes/Carlos 2.png", desc: "Cette carte perd 500 d'attaque par tour, mais active la carte terrain Sfax, tant que le terrain est actif Omar est invincible"}]
@@ -628,7 +627,7 @@
         let selectedAttackerIndex = null;
 
         // ==========================================
-        // SYSTÈME DE GESTION DES TERRAINS ET ATK
+        // SYSTÈME DE GESTION DES TERRAINS ET STATS
         // ==========================================
 
         function activateTerrain(terrainName, terrainImage, terrainDesc) {
@@ -671,28 +670,39 @@
 
         function getCardEffectiveAtk(card, playerNum) {
             let baseAtk = card.atk || 0;
-
             if (card.name === "Romolo") {
                 baseAtk += countFemmeOnField() * 500;
             }
 
             if (card.name === "Balayeur de Femmes") {
                 baseAtk += (countFemmeOnField() * 500);
-                if (card.attributes && card.attributes.includes("femme")) {
-                    baseAtk -= 500;
-                }
+            }
+
+            if (card.attributes && card.attributes.includes("femme") && card.name !== "Balayeur de Femmes") {
+                baseAtk -= 500;
             }
 
             if (card.name === "Aura Pablet") {
                 let opponentNum = playerNum === 1 ? 2 : 1;
                 let maxOpponentAtk = 0;
                 if (state.field[opponentNum] && state.field[opponentNum].length > 0) {
-                    maxOpponentAtk = Math.max(...state.field[opponentNum].map(c => c.atk || 0));
+                    maxOpponentAtk = Math.max(...state.field[opponentNum].map(c => getCardEffectiveAtk(c, opponentNum)));
                 }
                 baseAtk = maxOpponentAtk + 3000;
             }
 
             return Math.max(0, baseAtk);
+        }
+
+        function getCardEffectiveDef(card, playerNum) {
+            let baseDef = card.def || 0;
+
+            // Le Balayeur de Femmes gagne +1500 de défense par carte attribut Femme sur le terrain
+            if (card.name === "Balayeur de Femmes") {
+                baseDef += (countFemmeOnField() * 1000);
+            }
+
+            return Math.max(0, baseDef);
         }
 
         // ==========================================
@@ -787,7 +797,6 @@
                     return logMessage("Le Balayeur de Femmes a déjà utilisé son effet ce tour-ci !");
                 }
 
-                // Activation du Terrain associé au Balayeur
                 activateTerrain("Sol Glissant", "concert-death.jpg", "Un terrain glissant qui perturbe les appuis ennemis.");
 
                 let targetsCountStr = prompt("Combien de cartes adverses souhaites-tu cibler pour leur attribuer l'attribut 'Femme' ? (Max 3) :");
@@ -998,7 +1007,8 @@
         function inspectCardInGame(card, playerNum) {
             document.getElementById('inspect-img').src = card.image;
             let effectiveAtk = playerNum ? getCardEffectiveAtk(card, playerNum) : (card.atk || 0);
-            document.getElementById('inspect-title').innerText = `${card.name} (ATK: ${effectiveAtk}, DEF: ${card.def || '?'})`;
+            let effectiveDef = playerNum ? getCardEffectiveDef(card, playerNum) : (card.def || 0);
+            document.getElementById('inspect-title').innerText = `${card.name} (ATK: ${effectiveAtk}, DEF: ${effectiveDef})`;
             let attrText = card.attributes && card.attributes.length > 0 ? ` | Attributs: ${card.attributes.join(', ')}` : "";
             document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}${attrText}`;
         }
@@ -1195,12 +1205,13 @@
                 }
 
                 let effectiveAtk = getCardEffectiveAtk(card, player);
+                let effectiveDef = getCardEffectiveDef(card, player);
                 let showEvolveBtn = canCardEvolve(card, player) && card.evolutions && card.evolutions.length > 0;
 
                 div.innerHTML = `
                     <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                     <div class="card-title">${card.name}</div>
-                    <div class="card-stats">⚔️ ${effectiveAtk} | 🛡️ ${card.def}</div>
+                    <div class="card-stats">⚔️ ${effectiveAtk} | 🛡️ ${effectiveDef}</div>
                     <button class="effect-btn" onclick="event.stopPropagation(); triggerCardEffectAction(${player}, ${index})">Effet</button>
                     ${showEvolveBtn ? `<button class="effect-btn" style="background: #27ae60;" onclick="event.stopPropagation(); triggerManualEvolution(${player}, ${index})">Évoluer</button>` : ''}
                 `;
@@ -1262,11 +1273,13 @@
             if (attacker.hasAttacked) return logMessage("Cette carte a déjà attaqué ce tour !");
 
             let attackerAtk = getCardEffectiveAtk(attacker, activePlayer);
+            let defenderDef = getCardEffectiveDef(defender, defendingPlayer);
+
             logMessage(`${attacker.name} attaque ${defender.name} !`);
 
             attacker.attackedCount = (attacker.attackedCount || 0) + 1;
 
-            if (attackerAtk >= defender.def) {
+            if (attackerAtk >= defenderDef) {
                 let destroyedCard = state.field[defendingPlayer].splice(defenderIdx, 1)[0];
                 if (!state.ground) state.ground = [];
                 state.ground.push(destroyedCard);
@@ -1275,7 +1288,7 @@
                 state.hp[defendingPlayer] -= damage;
                 logMessage(`Impact critique ! ${defender.name} est détruite et le Joueur ${defendingPlayer} subit ${damage} dégâts !`);
             } else {
-                let minorDamage = Math.max(100, attackerAtk - defender.def);
+                let minorDamage = Math.max(100, attackerAtk - defenderDef);
                 state.hp[defendingPlayer] -= minorDamage;
                 logMessage(`${defender.name} encaisse, mais le Joueur ${defendingPlayer} perd ${minorDamage} PV.`);
             }
@@ -1346,12 +1359,13 @@
                             if (!attacker.hasAttacked && state.field[1].length > 0) {
                                 let defender = state.field[1][0];
                                 let aiAtk = getCardEffectiveAtk(attacker, 2);
+                                let defenderDef = getCardEffectiveDef(defender, 1);
                                 logMessage(`IA : ${attacker.name} attaque ${defender.name} !`);
                                 attacker.attackedCount = (attacker.attackedCount || 0) + 1;
-                                if (aiAtk >= defender.def) {
+                                if (aiAtk >= defenderDef) {
                                     let destroyedCard = state.field[1].splice(0, 1)[0];
                                     if (!state.ground) state.ground = [];
-                                    state.ground.path ? state.ground.push(destroyedCard) : state.ground.push(destroyedCard);
+                                    state.ground.push(destroyedCard);
 
                                     let damage = aiAtk;
                                     state.hp[1] -= damage;
