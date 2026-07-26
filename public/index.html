@@ -649,7 +649,7 @@
 
             const music = document.getElementById('bg-music');
             if (terrainName === "Moyen de Locomotion") {
-                music.src = "terrainlocomotion.mp4";
+                music.src = "sncf.mp3";
             } else {
                 music.src = "terrainglissant.mp4";
             }
@@ -664,7 +664,7 @@
                         if (c.name === "Hom Moustache Commune Îles de France") {
                             let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué par l'effet terrain." };
                             state.field[p].push(busCard);
-                            logMessage(`🚌 L'effet terrain active le pouvoir de l'Hom Moustache : un bus est invoqué sur le terrain du Joueur ${p} !`);
+                            logMessage(`🚌 L'effet terrain active le pouvoir de l'Hom Moustache : un bus est invoqué sur le terrain du Joueur ${p} ![cite: 1]`);
 
                             let busCount = state.field[p].filter(cardItem => cardItem.name.includes("Bus")).length;
                             if (busCount >= 3) {
@@ -672,7 +672,7 @@
                                 let totalDamage = busCount * 1500;
                                 let opponentNum = p === 1 ? 2 : 1;
                                 state.hp[opponentNum] -= totalDamage;
-                                logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés au Joueur ${opponentNum} !`);
+                                logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés au Joueur ${opponentNum} ![cite: 1]`);
                             }
                         }
                     });
@@ -780,7 +780,7 @@
             if (card.name === "Hom Moustache Commune Îles de France") {
                 activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué (sauf pour 1 seule carte ciblée par tour).");
                 card.effectCancelledTurns = 1;
-                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour !");
+                logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour ![cite: 1]");
             }
 
             logMessage(`✨ ÉVOLUTION MANUELLE ! La carte devient : ${card.name} !`);
@@ -816,18 +816,24 @@
             logMessage(`Activation de l'effet de : ${card.name}`);
 
             if (card.name === "Hom Moustache Commune Îles de France") {
-                let busCard = { name: "Bus 2000", atk: 2000, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué." };
+                if (card.effectUsedThisTurn) {
+                    return logMessage("L'Hom Moustache a déjà activé son effet ce tour-ci ![cite: 1]");
+                }
+
+                let busCard = { name: "Bus 2000", atk: 0, def: 2000, cost: 0, image: "cartes/bus3.jpg", desc: "Bus supplémentaire invoqué." };
                 state.field[playerNum].push(busCard);
-                logMessage("🚌 Un bus supplémentaire a été invoqué sur le terrain par l'effet de l'Hom Moustache !");
+                logMessage("🚌 Un bus supplémentaire a été invoqué sur le terrain par l'effet de l'Hom Moustache ![cite: 1]");
 
                 let busCount = state.field[playerNum].filter(c => c.name.includes("Bus")).length;
                 if (busCount >= 3) {
                     state.field[playerNum] = state.field[playerNum].filter(c => !c.name.includes("Bus"));
-                    let totalDamage = busCount * 1500;
+                    let totalDamage = busCount * 750;
                     let opponentNum = playerNum === 1 ? 2 : 1;
                     state.hp[opponentNum] -= totalDamage;
-                    logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés à l'adversaire !`);
+                    logMessage(`💥 3 bus ou plus sur le terrain ! Destruction de tous les bus et ${totalDamage} points de dégâts infligés à l'adversaire ![cite: 1]`);
                 }
+
+                card.effectUsedThisTurn = true;
             }
             else if (card.name === "Romolo") {
                 if (state.romoloEffectUsedThisTurn) {
@@ -1409,7 +1415,7 @@
             if (card.name === "Homme Bus Île de France") {
                 let busCard = {
                     name: "Bus 2000",
-                    atk: 2000,
+                    atk: 0,
                     def: 2000,
                     cost: 0,
                     image: "cartes/bus3.jpg",
@@ -1552,6 +1558,7 @@
             if (Array.isArray(state.field[state.turn])) {
                 state.field[state.turn].forEach(c => {
                     c.balayeurEffectUsedThisTurn = false;
+                    c.effectUsedThisTurn = false; // Réinitialisation de l'effet de l'Hom Moustache
                     if (c.skipAttackTurns && c.skipAttackTurns > 0) {
                         c.skipAttackTurns--;
                         c.hasAttacked = true;
