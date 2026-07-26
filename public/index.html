@@ -665,7 +665,7 @@
             },
             {name: "Sfax", atk: 0, def: 0, cost: 3, stage: 1, image: "cartes/sfax.jpeg", desc: "Active immédiatement le terrain de Sfax. Si cette carte est détruite, panne d'éléctricité et l'adversaire doit sauter son prochain tour",
     evolutions: []
-},          {name: "Chuck Schuldiner", atk: 3333, def: 5400, cost: 8, stage: 1, image: "cartes/chuck.png", desc: "Active le compteur de attaque finale : spiritual healing, à chaque fois que chuck attaque une carte adverse il gagne +1 a son compteur, si un effet terrain ou carte est activé il gagne +1 aussi, chuck peut lancer une attaque finale qui attaque attaque directement l'adversaire en lui infligeant 500 degat par compteur accumulé moins l'attaque sommé de toutes les cartes sur le terrain adverse. L'attaque finale peut etre lancée si la puissance de l'attaque finale depasse la somme des attaque des cartes adverses. ",
+},          {name: "Chuck Schuldiner", atk: 3333, def: 5400, cost: 8, stage: 1, image: "cartes/chuck.png", desc: "Active le compteur de attaque finale : spiritual healing, à chaque fois que chuck attaque une carte adverse il gagne +1 a son compteur, si un effet terrain ou carte est activé il gagne +1 aussi, chuck peut lancer une attaque finale qui attaque attaque directement l'adversaire en lui infligeant 2000 degat par compteur accumulé moins l'attaque sommé de toutes les cartes sur le terrain adverse. L'attaque finale peut etre lancée si la puissance de l'attaque finale depasse la somme des attaque des cartes adverses. ",
     evolutions: []}
         ];
 
@@ -694,6 +694,18 @@
                 image: terrainImage,
                 desc: terrainDesc
             };
+
+            // Incrément du compteur de Chuck Schuldiner si un terrain est activé
+            [1, 2].forEach(p => {
+                if (Array.isArray(state.field[p])) {
+                    state.field[p].forEach(c => {
+                        if (c.name === "Chuck Schuldiner") {
+                            c.spiritualHealingCount = (c.spiritualHealingCount || 0) + 1;
+                            logMessage(`⚡ Chuck Schuldiner gagne +1 compteur Spiritual Healing suite à l'activation d'un terrain (Total : ${c.spiritualHealingCount})[cite: 1] !`);
+                        }
+                    });
+                }
+            });
 
             const music = document.getElementById('bg-music');
             if (terrainName === "Moyen de Locomotion") {
@@ -851,6 +863,18 @@
                 return logMessage("Ce n'est pas ton tour d'activer un effet !");
             }
 
+            /* Incrément du compteur de Chuck Schuldiner si n'importe quel effet de carte est activé */
+            [1, 2].forEach(p => {
+                if (Array.isArray(state.field[p])) {
+                    state.field[p].forEach(c => {
+                        if (c.name === "Chuck Schuldiner") {
+                            c.spiritualHealingCount = (c.spiritualHealingCount || 0) + 1;
+                            logMessage(`⚡ Chuck Schuldiner gagne +1 compteur suite à l'activation d'un effet (Total : ${c.spiritualHealingCount})[cite: 1] !`);
+                        }
+                    });
+                }
+            });
+
             /* Vérification de la règle du terrain "Moyen de Locomotion" (1 seule carte ciblée par tour) */
             if (state.activeTerrain && state.activeTerrain.name === "Moyen de Locomotion" && card.name !== "Hom Moustache Commune Îles de France") {
                 if (!state.locomotionTarget) {
@@ -870,7 +894,26 @@
 
             logMessage(`Activation de l'effet de : ${card.name}`);
 
-            if (card.name === "Hom Moustache Commune Îles de France") {
+            if (card.name === "Chuck Schuldiner") {
+                let opponentNum = playerNum === 1 ? 2 : 1;
+                let count = card.spiritualHealingCount || 0;
+                let totalOpponentAtk = 0;
+                if (state.field[opponentNum] && state.field[opponentNum].length > 0) {
+                    totalOpponentAtk = state.field[opponentNum].reduce((sum, c) => sum + getCardEffectiveAtk(c, opponentNum), 0);
+                }
+
+                let spiritualHealingPower = count * 2000;
+                logMessage(`🎸 Spiritual Healing en cours... Puissance = ${spiritualHealingPower} | Somme ATK adverse = ${totalOpponentAtk}[cite: 1].`);
+
+                if (spiritualHealingPower > totalOpponentAtk) {
+                    let damage = spiritualHealingPower - totalOpponentAtk;
+                    state.hp[opponentNum] -= damage;
+                    logMessage(`💀 ATTAQUE FINALE RÉUSSIE ! Spiritual Healing inflige ${damage} dégâts directs au Joueur ${opponentNum}[cite: 1] !`);
+                } else {
+                    logMessage(`❌ Échec de Spiritual Healing : la puissance (${spiritualHealingPower}) ne dépasse pas la somme des attaques adverses (${totalOpponentAtk})[cite: 1].`);
+                }
+            }
+            else if (card.name === "Hom Moustache Commune Îles de France") {
                 if (card.effectUsedThisTurn) {
                     return logMessage("L'Hom Moustache a déjà activé son effet ce tour-ci[cite: 1] !");
                 }
@@ -1160,7 +1203,14 @@
             let isFemme = card.attributes && card.attributes.includes("femme");
             let femmeSymbol = isFemme ? ' <span class="female-symbol">♀</span>' : '';
 
-            document.getElementById('inspect-title').innerHTML = `${card.name}${femmeSymbol} (ATK: ${effectiveAtk}, DEF: ${effectiveDef})`;
+            let extraInfo = "";
+            if (card.name === "Chuck Schuldiner") {
+                let count = card.spiritualHealingCount || 0;
+                let spPower = count * 3500;
+                extraInfo = ` | Compteur Spiritual Healing : ${count} (Puissance : ${spPower})`;
+            }
+
+            document.getElementById('inspect-title').innerHTML = `${card.name}${femmeSymbol} (ATK: ${effectiveAtk}, DEF: ${effectiveDef})${extraInfo}`;
             let attrText = card.attributes && card.attributes.length > 0 ? ` | Attributs: ${card.attributes.join(', ')}` : "";
             document.getElementById('inspect-desc').innerText = `Effet : ${card.desc || 'Aucun effet additionnel pour cette carte.'}${attrText}`;
         }
@@ -1391,10 +1441,33 @@
                 let isFemme = card.attributes && card.attributes.includes("femme");
                 let femmeSymbol = isFemme ? ' <span class="female-symbol">♀</span>' : '';
 
+                // Ajout d'une interface visuelle spécifique pour Chuck Schuldiner (compteur et puissance d'attaque spéciale)
+                let chuckSpecialInfo = "";
+                if (card.name === "Chuck Schuldiner") {
+                    let count = card.spiritualHealingCount || 0;
+                    let spPower = count * 3500;
+                    let opponentNum = player === 1 ? 2 : 1;
+                    let totalOpponentAtk = 0;
+                    if (state.field[opponentNum] && state.field[opponentNum].length > 0) {
+                        totalOpponentAtk = state.field[opponentNum].reduce((sum, c) => sum + getCardEffectiveAtk(c, opponentNum), 0);
+                    }
+                    let canTrigger = spPower > totalOpponentAtk;
+                    let badgeColor = canTrigger ? "#2ecc71" : "#e74c3c";
+                    let badgeText = canTrigger ? "PRÊT !" : "TROP FAIBLE";
+
+                    chuckSpecialInfo = `
+                        <div style="font-size: 0.5em; background: rgba(0,0,0,0.8); padding: 3px; border-radius: 4px; margin-top: 3px; border: 1px solid ${badgeColor};">
+                            🎸 Spécial : <strong>${spPower}</strong> vs Adv (${totalOpponentAtk})<br>
+                            <span style="color: ${badgeColor}; font-weight: bold;">● ${badgeText}</span>
+                        </div>
+                    `;
+                }
+
                 div.innerHTML = `
                     <div class="card-img-container"><img src="${card.image}" alt="${card.name}"></div>
                     <div class="card-title">${card.name}${femmeSymbol}</div>
                     <div class="card-stats">⚔️ ${effectiveAtk} | 🛡️ ${effectiveDef}</div>
+                    ${chuckSpecialInfo}
                     <button class="effect-btn" onclick="event.stopPropagation(); triggerCardEffectAction(${player}, ${index})">Effet</button>
                     ${showEvolveBtn ? `<button class="effect-btn" style="background: #27ae60;" onclick="event.stopPropagation(); triggerManualEvolution(${player}, ${index})">Évoluer</button>` : ''}
                 `;
@@ -1534,6 +1607,12 @@
 
             if (!attacker || !defender) return;
             if (attacker.hasAttacked) return logMessage("Cette carte a déjà attaqué ce tour !");
+
+            // Incrément du compteur de Chuck Schuldiner lors d'une attaque de carte
+            if (attacker.name === "Chuck Schuldiner") {
+                attacker.spiritualHealingCount = (attacker.spiritualHealingCount || 0) + 1;
+                logMessage(`⚡ Chuck Schuldiner gagne +1 compteur suite à son attaque (Total : ${attacker.spiritualHealingCount})[cite: 1] !`);
+            }
 
             if (state.activeTerrain && state.activeTerrain.name === "Sol Glissant") {
                 let slipRoll = Math.random();
