@@ -604,6 +604,11 @@
         <button class="menu-btn" onclick="location.reload()">Rejouer</button>
     </div>
 
+    <!-- Overlay vidéo pour la Spé de Chuck Schuldiner -->
+    <div id="chuck-video-overlay" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 200; display: flex; justify-content: center; align-items: center;">
+        <video id="chuck-vid" src="chuck.mp4" style="max-width: 80%; max-height: 80%; border: 3px solid #ff3d00; border-radius: 10px;"></video>
+    </div>
+
     <!-- Journal des actions textuel -->
     <div id="log" class="log">> Bienvenue dans Duel de Cartes.</div>
 
@@ -844,7 +849,7 @@
             card.evolutions = card.evolutions.slice(1);
 
             if (card.name === "Hom Moustache Commune Îles de France") {
-                activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué (sauf pour 1 seule carte ciblée par tour).");
+                activateTerrain("Moyen de Locomotion", card.image, "Annule les effets de toutes les cartes pendant 1 tour le tour où il est invoqué.");
                 card.effectCancelledTurns = 1;
                 logMessage("🚌 L'évolution active le terrain : Moyen de Locomotion et restreint l'annulation des effets à 1 seule carte ciblée par tour[cite: 1]!");
             }
@@ -895,6 +900,25 @@
             logMessage(`Activation de l'effet de : ${card.name}`);
 
             if (card.name === "Chuck Schuldiner") {
+                // --- LANCEMENT DE LA VIDÉO D'ANIMATION ET COUPURE DE LA MUSIQUE ---
+                const videoOverlay = document.getElementById('chuck-video-overlay');
+                const chuckVideo = document.getElementById('chuck-vid');
+                const bgMusic = document.getElementById('bg-music');
+
+                // Coupe la musique de fond pendant la vidéo
+                bgMusic.pause();
+
+                videoOverlay.classList.remove('hidden');
+                chuckVideo.currentTime = 0;
+                chuckVideo.play().catch(e => console.log("Erreur lecture vidéo Chuck :", e));
+
+                chuckVideo.onended = () => {
+                    videoOverlay.classList.add('hidden');
+                    // Reprend la lecture de la musique de fond après la vidéo
+                    bgMusic.play().catch(e => console.log("Erreur reprise audio :", e));
+                };
+                // -----------------------------------------------------------------
+
                 let opponentNum = playerNum === 1 ? 2 : 1;
                 let count = card.spiritualHealingCount || 0;
                 let totalOpponentAtk = 0;
